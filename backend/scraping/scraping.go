@@ -21,7 +21,7 @@ func ScrapeRecipes() error {
 
 	// URL of the page to scrape
 	url := "https://little-alchemy.fandom.com/wiki/Elements_(Little_Alchemy_2)"
-	doc, err := getDocument(url)
+	doc, err := getHTMLDocument(url)
 	if err != nil {
 		fmt.Println("Error:", err)
 	}
@@ -35,6 +35,7 @@ func ScrapeRecipes() error {
 	}
 
 	// Scraping
+	// First column is the element
 	recipe_tables := doc.Find("table")
 	for i := range recipe_tables.Length() {
 		if i == 0 {
@@ -51,7 +52,6 @@ func ScrapeRecipes() error {
 			}
 
 			columns := row.Find("td")
-			// First column is the element
 			element := columns.Eq(0).Text()
 			if element != "" {
 				element = strings.TrimSpace(element)
@@ -59,15 +59,32 @@ func ScrapeRecipes() error {
 				recipesJSON.Recipe[element] = make([][]string, 0)
 			}
 
-			// Second column is the recipe
+		})
+	}
+	// Second column is the recipe
+	for i := range recipe_tables.Length() {
+		if i == 0 {
+			continue // this annoying table
+		}
+
+		recipe_tables.Eq(i).Find("tr").Each(func(index int, row *goquery.Selection) {
+			if index == 0 {
+				if row.Find("td").Eq(0).Text() != "Element" || row.Find("td").Eq(1).Text() != "Recipes" {
+					return
+				}
+			}
+
+			columns := row.Find("td")
+			element := strings.TrimSpace(columns.Eq(0).Text())
 			recipes := columns.Eq(1).Find("li")
 			recipes.Each(func(index int, recipe *goquery.Selection) {
 				recipe_text := strings.Split(recipe.Text(), "+")
-				if len(recipe_text) > 1 {
-					recipe_text[0] = strings.TrimSpace(recipe_text[0])
-					recipe_text[1] = strings.TrimSpace(recipe_text[1])
-
-					recipesJSON.Recipe[element] = append(recipesJSON.Recipe[element], recipe_text)
+				recipe_text[0] = strings.TrimSpace(recipe_text[0])
+				recipe_text[1] = strings.TrimSpace(recipe_text[1])
+				_, ok1 := recipesJSON.Recipe[recipe_text[0]]
+				_, ok2 := recipesJSON.Recipe[recipe_text[1]]
+				if len(recipe_text) > 1 && ok1 && ok2 { // Also check if the recipe contains invalid parts
+					recipesJSON.Recipe[element] = append(recipesJSON.Recipe[element], []string{recipe_text[0], recipe_text[1]})
 				}
 			})
 			if recipes.Length() == 0 {
@@ -99,20 +116,25 @@ func ScrapeRecipes() error {
 	return nil
 }
 
-func getDocument(url string) (*goquery.Document, error) {
-	res, err := http.Get(url)
+func GetScrapedRecipesJSON() (RecipeEntry, error) {
+	// Read the JSON file
+	filename := "scraping/recipes.json"
+	file, err := os.Open(filename)
 	if err != nil {
-		return nil, err
+		fmt.Println("Error:", err)
+		return RecipeEntry{}, err
 	}
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return nil, fmt.Errorf("status code: %d", res.StatusCode)
-	}
-	doc, err := goquery.NewDocumentFromReader(res.Body)
+	defer file.Close()
+
+	decoder := json.NewDecoder(file)
+	recipesJSON := RecipeEntry{}
+	err = decoder.Decode(&recipesJSON)
 	if err != nil {
-		return nil, err
+		fmt.Println("Error:", err)
+		return RecipeEntry{}, err
 	}
-	return doc, nil
+
+	return recipesJSON, nil
 }
 
 func exportJSON(recipesJSON RecipeEntry) (string, error) {
@@ -135,4 +157,20 @@ func exportJSON(recipesJSON RecipeEntry) (string, error) {
 	}
 
 	return filename, nil
+}
+
+func getHTMLDocument(url string) (*goquery.Document, error) {
+	res, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		return nil, fmt.Errorf("status code: %d", res.StatusCode)
+	}
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		return nil, err
+	}
+	return doc, nil
 }

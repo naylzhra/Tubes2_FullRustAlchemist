@@ -1078,22 +1078,6 @@
       [
         "Human",
         "Light"
-      ],
-      [
-        "Human",
-        "Heaven"
-      ],
-      [
-        "Human",
-        "Good"
-      ],
-      [
-        "Good",
-        "Demon"
-      ],
-      [
-        "Good",
-        "Deity"
       ]
     ],
     "Angler": [
@@ -1356,14 +1340,6 @@
       [
         "Vampire",
         "Dawn"
-      ],
-      [
-        "Vampire",
-        "Holy grail"
-      ],
-      [
-        "Vampire",
-        "Holy water"
       ]
     ],
     "Astronaut": [
@@ -1552,10 +1528,6 @@
       [
         "Tool",
         "Lumberjack"
-      ],
-      [
-        "Tool",
-        "Paul bunyan"
       ]
     ],
     "Bacon": [
@@ -1796,10 +1768,6 @@
         "Goat"
       ],
       [
-        "House",
-        "Babe the blue ox"
-      ],
-      [
         "Container",
         "Livestock"
       ],
@@ -1830,10 +1798,6 @@
       [
         "Container",
         "Goat"
-      ],
-      [
-        "Container",
-        "Babe the blue ox"
       ]
     ],
     "Barrel": [
@@ -2476,14 +2440,6 @@
       [
         "Wood",
         "Wire"
-      ],
-      [
-        "Tool",
-        "Elf"
-      ],
-      [
-        "Tool",
-        "Cupid"
       ]
     ],
     "Box": [
@@ -2578,10 +2534,6 @@
       [
         "Wood",
         "Hay"
-      ],
-      [
-        "Tool",
-        "Baba yaga"
       ]
     ],
     "Bucket": [
@@ -3116,22 +3068,6 @@
       [
         "Monarch",
         "Wall"
-      ],
-      [
-        "Paladin",
-        "Stone"
-      ],
-      [
-        "Paladin",
-        "Wall"
-      ],
-      [
-        "Paladin",
-        "House"
-      ],
-      [
-        "Paladin",
-        "Container"
       ]
     ],
     "Cat": [
@@ -3160,10 +3096,6 @@
       [
         "Cat",
         "Flower"
-      ],
-      [
-        "Baast",
-        "Plant"
       ]
     ],
     "Cauldron": [
@@ -3429,18 +3361,6 @@
       ],
       [
         "Chicken",
-        "Container"
-      ],
-      [
-        "Cockatrice",
-        "House"
-      ],
-      [
-        "Cockatrice",
-        "Barn"
-      ],
-      [
-        "Cockatrice",
         "Container"
       ]
     ],
@@ -4114,14 +4034,6 @@
       [
         "Human",
         "Arrow"
-      ],
-      [
-        "Jiangshi",
-        "Mirror"
-      ],
-      [
-        "Jiangshi",
-        "Peach of immortality"
       ]
     ],
     "Cotton": [
@@ -4786,10 +4698,6 @@
       [
         "Lizard",
         "Legend"
-      ],
-      [
-        "Dinosaur",
-        "Monster"
       ]
     ],
     "Drone": [
@@ -5417,14 +5325,6 @@
       [
         "Story",
         "Unicorn"
-      ],
-      [
-        "Story",
-        "Faerie"
-      ],
-      [
-        "Story",
-        "Elf"
       ]
     ],
     "Family": [
@@ -6205,14 +6105,6 @@
       [
         "Zombie",
         "Lightning"
-      ],
-      [
-        "Monster",
-        "Story"
-      ],
-      [
-        "Monster",
-        "Corpse"
       ]
     ],
     "French fries": [
@@ -6639,10 +6531,6 @@
         "Legend"
       ],
       [
-        "Graveyard",
-        "Curse"
-      ],
-      [
         "Grave",
         "Night"
       ],
@@ -6653,10 +6541,6 @@
       [
         "Grave",
         "Legend"
-      ],
-      [
-        "Grave",
-        "Curse"
       ],
       [
         "Gravestone",
@@ -6947,18 +6831,6 @@
       [
         "Steel",
         "Alchemist"
-      ],
-      [
-        "Metal",
-        "Philosopher's stone"
-      ],
-      [
-        "Steel",
-        "Philosopher's stone"
-      ],
-      [
-        "Quicksilver",
-        "Philosopher's stone"
       ]
     ],
     "Golem": [
@@ -7179,10 +7051,6 @@
       [
         "River",
         "Scythe"
-      ],
-      [
-        "Scythe",
-        "Deity"
       ]
     ],
     "Gun": [
@@ -8199,14 +8067,6 @@
       [
         "Volcano",
         "Ocean"
-      ],
-      [
-        "Maui's fishhook",
-        "Ocean"
-      ],
-      [
-        "Maui's fishhook",
-        "Sea"
       ]
     ],
     "Ivy": [
@@ -8379,10 +8239,6 @@
         "Gas"
       ],
       [
-        "Planet",
-        "Zeus"
-      ],
-      [
         "Saturn",
         "Big"
       ]
@@ -8403,14 +8259,6 @@
       [
         "Dinosaur",
         "Story"
-      ],
-      [
-        "Monster",
-        "City"
-      ],
-      [
-        "Monster",
-        "Skyscraper"
       ]
     ],
     "Katana": [
@@ -8915,14 +8763,6 @@
       [
         "Land",
         "Storm"
-      ],
-      [
-        "Zeus",
-        "Tool"
-      ],
-      [
-        "Cyclops",
-        "Tool"
       ]
     ],
     "Lion": [
@@ -9029,14 +8869,6 @@
       [
         "Human",
         "Human"
-      ],
-      [
-        "Cupid",
-        "Bow"
-      ],
-      [
-        "Cupid",
-        "Arrow"
       ]
     ],
     "Lumberjack": [
@@ -9495,10 +9327,6 @@
         "Swimmer"
       ],
       [
-        "Fish",
-        "Selkie"
-      ],
-      [
         "Swimmer",
         "Magic"
       ]
@@ -9697,10 +9525,6 @@
       [
         "Cow",
         "Legend"
-      ],
-      [
-        "Cow",
-        "Monster"
       ]
     ],
     "Mirror": [
@@ -10071,14 +9895,6 @@
       [
         "Corpse",
         "Fabric"
-      ],
-      [
-        "Corpse",
-        "Book of the dead"
-      ],
-      [
-        "Human",
-        "Book of the dead"
       ]
     ],
     "Music": [
@@ -11281,10 +11097,6 @@
       [
         "Hay",
         "Steel"
-      ],
-      [
-        "Tool",
-        "Demon"
       ]
     ],
     "Pizza": [
@@ -11731,10 +11543,6 @@
       [
         "Mummy",
         "Container"
-      ],
-      [
-        "Container",
-        "Book of the dead"
       ]
     ],
     "Quicksand": [
@@ -14027,74 +13835,6 @@
       [
         "Medusa",
         "Mirror"
-      ],
-      [
-        "Troll",
-        "Sun"
-      ],
-      [
-        "Troll",
-        "Dawn"
-      ],
-      [
-        "Cockatrice",
-        "Human"
-      ],
-      [
-        "Cockatrice",
-        "Hacker"
-      ],
-      [
-        "Cockatrice",
-        "Engineer"
-      ],
-      [
-        "Cockatrice",
-        "Lumberjack"
-      ],
-      [
-        "Cockatrice",
-        "Pilot"
-      ],
-      [
-        "Cockatrice",
-        "Sailor"
-      ],
-      [
-        "Cockatrice",
-        "Farmer"
-      ],
-      [
-        "Cockatrice",
-        "Firefighter"
-      ],
-      [
-        "Cockatrice",
-        "Surfer"
-      ],
-      [
-        "Cockatrice",
-        "Astronaut"
-      ],
-      [
-        "Cockatrice",
-        "Butcher"
-      ],
-      [
-        "Cockatrice",
-        "Doctor"
-      ],
-      [
-        "Cockatrice",
-        "Baker"
-      ],
-      [
-        "Cockatrice",
-        "Drunk"
-      ],
-      [
-        "Cockatrice",
-        "Mirror"
       ]
     ],
     "Steak": [
@@ -15352,10 +15092,6 @@
       [
         "Galaxy cluster",
         "Container"
-      ],
-      [
-        "Primordial soup",
-        "Cosmic egg"
       ]
     ],
     "Vacuum cleaner": [
@@ -15852,10 +15588,6 @@
       [
         "Human",
         "Werewolf"
-      ],
-      [
-        "Wolf",
-        "Monster"
       ]
     ],
     "Wheat": [
@@ -15984,10 +15716,6 @@
       [
         "Alcohol",
         "Juice"
-      ],
-      [
-        "Tool",
-        "Dionysus"
       ]
     ],
     "Wire": [
@@ -16122,14 +15850,6 @@
       [
         "Forest",
         "Lumberjack"
-      ],
-      [
-        "Tree",
-        "Paul bunyan"
-      ],
-      [
-        "Forest",
-        "Paul bunyan"
       ]
     ],
     "Woodpecker": [
@@ -16220,22 +15940,6 @@
       [
         "Antarctica",
         "Legend"
-      ],
-      [
-        "Monster",
-        "Mountain"
-      ],
-      [
-        "Monster",
-        "Mountain range"
-      ],
-      [
-        "Monster",
-        "Glacier"
-      ],
-      [
-        "Monster",
-        "Antarctica"
       ]
     ],
     "Yogurt": [
@@ -16264,10 +15968,6 @@
       [
         "Human",
         "Zombie"
-      ],
-      [
-        "Corpse",
-        "Necromancer"
       ]
     ],
     "Zoo": [
