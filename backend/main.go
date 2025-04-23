@@ -25,11 +25,14 @@ func main() {
 	fmt.Println("Recipe graph constructed successfully!")
 	fmt.Println("Length of element nodes:", len(graph.Elements))
 	total_edges := 0
-	for _, element := range graph.Elements {
-		// fmt.Printf("Element %d: %s\n", i, element.Name)
-		// fmt.Printf("Number of children: %d\n", len(element.Children))
-		// fmt.Printf("Number of recipes: %d\n", len(element.Recipes))
+	for i, element := range graph.Elements {
 		total_edges += len(element.Recipes)
+		if i != 0 {
+			continue
+		}
+		fmt.Printf("Element %d: %s\n", i, element.Name)
+		fmt.Printf("Number of children: %d\n", len(element.Children))
+		fmt.Printf("Number of recipes: %d\n", len(element.Recipes))
 	}
 	fmt.Println("Total number of edges:", total_edges)
 }

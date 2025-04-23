@@ -58,21 +58,25 @@ func ConstructRecipeGraph(recipesJSON scraping.RecipeEntry, graph *RecipeGraph) 
 		node := elementMap[elementName]
 		for _, recipe := range recipesJSON.Recipe[elementName] {
 			if len(recipe) < 2 {
-				continue // Skip if the recipe is not valid
-			}
-
-			parent1, ok1 := elementMap[recipe[0]]
-			parent2, ok2 := elementMap[recipe[1]]
-			if !ok1 || !ok2 {
-				fmt.Printf("Skipping recipe for element %s: missing parent(s) %v\n", elementName, recipe)
-				continue
-			}
-			node.Recipes = append(node.Recipes, []*ElementNode{parent1, parent2})
-			if !slices.Contains(parent1.Children, node) {
-				parent1.Children = append(parent1.Children, node)
-			}
-			if !slices.Contains(parent2.Children, node) {
-				parent2.Children = append(parent2.Children, node)
+				root := GetRoot(graph)
+				node.Recipes = append(node.Recipes, []*ElementNode{root, root})
+				if !slices.Contains(root.Children, node) {
+					root.Children = append(root.Children, node)
+				}
+			} else {
+				parent1, ok1 := elementMap[recipe[0]]
+				parent2, ok2 := elementMap[recipe[1]]
+				if !ok1 || !ok2 {
+					fmt.Printf("Skipping recipe for element %s: missing parent(s) %v\n", elementName, recipe)
+					continue
+				}
+				node.Recipes = append(node.Recipes, []*ElementNode{parent1, parent2})
+				if !slices.Contains(parent1.Children, node) {
+					parent1.Children = append(parent1.Children, node)
+				}
+				if !slices.Contains(parent2.Children, node) {
+					parent2.Children = append(parent2.Children, node)
+				}
 			}
 		}
 	}
