@@ -87,10 +87,12 @@ func ScrapeRecipes() error {
 					recipesJSON.Recipe[element] = append(recipesJSON.Recipe[element], []string{recipe_text[0], recipe_text[1]})
 				}
 			})
-			if recipes.Length() == 0 {
-				// If there are no recipes, add an empty recipe
-				recipesJSON.Recipe[element] = append(recipesJSON.Recipe[element], []string{})
+
+			// Primordial elements
+			if strings.Contains(columns.Eq(1).Text(), "Available from the start") || strings.Contains(columns.Eq(1).Text(), "Have 100 elements unlocked, including the starting elements.") {
+				recipesJSON.Recipe[element] = append(recipesJSON.Recipe[element], []string{"", ""})
 			}
+
 		})
 	}
 

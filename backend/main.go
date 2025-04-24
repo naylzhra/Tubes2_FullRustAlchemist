@@ -2,6 +2,7 @@ package main
 
 import (
 	"backend/scraping"
+	"backend/search"
 	"fmt"
 )
 
@@ -16,8 +17,8 @@ func main() {
 	}
 
 	// Initialize the recipe graph
-	graph := RecipeGraph{Elements: make([]ElementNode, 0)}
-	err = ConstructRecipeGraph(recipes, &graph)
+	graph := search.RecipeGraph{}
+	err = search.ConstructRecipeGraph(recipes, &graph)
 	if err != nil {
 		panic(err)
 	}
@@ -25,14 +26,15 @@ func main() {
 	fmt.Println("Recipe graph constructed successfully!")
 	fmt.Println("Length of element nodes:", len(graph.Elements))
 	total_edges := 0
-	for i, element := range graph.Elements {
+	for _, element := range graph.Elements {
 		total_edges += len(element.Recipes)
-		if i != 0 {
-			continue
-		}
-		fmt.Printf("Element %d: %s\n", i, element.Name)
-		fmt.Printf("Number of children: %d\n", len(element.Children))
-		fmt.Printf("Number of recipes: %d\n", len(element.Recipes))
 	}
 	fmt.Println("Total number of edges:", total_edges)
+
+	elem, err := search.GetElementByName(&graph, "Fire")
+	if err == nil {
+		fmt.Println(search.GetName(elem))
+		fmt.Println("Number of children:", len(elem.Children))
+		fmt.Println("Number of recipes:", len(elem.Recipes))
+	}
 }
