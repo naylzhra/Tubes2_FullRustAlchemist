@@ -3,24 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>Result</title>
-    <style>@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300&display=swap');</style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../globals.css">
     <link rel="stylesheet" href="result.css">
     <script src="script.js"></script>
 </head>
 <body>
     <div class="navbar">
-        <img src="little-alchemy-2-icon.png" alt="Logo" class="logo">
-        <h1>Home</h1>
+        <div class="icon">
+            <div class="logo"></div>
+            <h1>Home</h1>
+        </div>
         <div class="navbar-button">
-            <p>Shortest recipe</p>
-            <p>Multiple recipe</p>
+            <p id="choice1">Shortest recipe</p>
+            <p id="choice2">Multiple recipe</p>
         </div>
     </div>
     <div class="result-body">
         <p class="target-element">Acid Rain</p>
-        <p>Time execution: 1.35s</p>
-        <p>Visited nodes: 100</p>
+        <div class="statistics">
+            <p>Time execution: 1.35s</p>
+            <p>Visited nodes: 100</p>
+        </div>
         <div class="graph">
             <img src="graph.png" alt="Graph" class="graph-image">
         </div>

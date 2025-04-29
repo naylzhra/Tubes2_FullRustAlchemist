@@ -20,6 +20,7 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: Poppins, Arial, Helvetica, sans-serif;
+  font-weight: 300;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
