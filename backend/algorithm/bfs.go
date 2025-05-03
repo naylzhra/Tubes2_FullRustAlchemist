@@ -1,14 +1,8 @@
-package main
+package algorithm
 
 import (
-	"backend/scraping"
 	"backend/search"
-	"bufio"
 	"fmt"
-	"log"
-	"os"
-	"strconv"
-	"strings"
 )
 
 type Queue[T any] struct {
@@ -101,48 +95,48 @@ func PrintCraftingPath(path []*search.ElementNode) {
 	}
 }
 
-func main() {
-	err := scraping.ScrapeRecipes()
-	if err != nil {
-		log.Fatal("Error while scraping recipes:", err)
-	}
+// func main() {
+// 	err := scraping.ScrapeRecipes()
+// 	if err != nil {
+// 		log.Fatal("Error while scraping recipes:", err)
+// 	}
 
-	recipes, err := scraping.GetScrapedRecipesJSON()
-	if err != nil {
-		log.Fatal("Error loading recipes from JSON:", err)
-	}
+// 	recipes, err := scraping.GetScrapedRecipesJSON()
+// 	if err != nil {
+// 		log.Fatal("Error loading recipes from JSON:", err)
+// 	}
 
-	var graph search.RecipeGraph
-	err = search.ConstructRecipeGraph(recipes, &graph)
-	if err != nil {
-		log.Fatal("Error constructing recipe graph:", err)
-	}
+// 	var graph search.RecipeGraph
+// 	err = search.ConstructRecipeGraph(recipes, &graph)
+// 	if err != nil {
+// 		log.Fatal("Error constructing recipe graph:", err)
+// 	}
 
-	fmt.Print("Enter target element name: ")
-	reader := bufio.NewReader(os.Stdin)
-	targetName, _ := reader.ReadString('\n')
-	targetName = strings.TrimSpace(targetName)
+// 	fmt.Print("Enter target element name: ")
+// 	reader := bufio.NewReader(os.Stdin)
+// 	targetName, _ := reader.ReadString('\n')
+// 	targetName = strings.TrimSpace(targetName)
 
-	fmt.Print("Enter maximum number of crafting paths to show: ")
-	inputMax, _ := reader.ReadString('\n')
-	inputMax = strings.TrimSpace(inputMax)
-	maxPaths, err := strconv.Atoi(inputMax)
-	if err != nil || maxPaths <= 0 {
-		log.Fatalf("Invalid number: %v\n", inputMax)
-	}
+// 	fmt.Print("Enter maximum number of crafting paths to show: ")
+// 	inputMax, _ := reader.ReadString('\n')
+// 	inputMax = strings.TrimSpace(inputMax)
+// 	maxPaths, err := strconv.Atoi(inputMax)
+// 	if err != nil || maxPaths <= 0 {
+// 		log.Fatalf("Invalid number: %v\n", inputMax)
+// 	}
 
-	target, err := search.GetElementByName(&graph, targetName)
-	if err != nil {
-		log.Fatalf("Error: element '%s' not found.\n", targetName)
-	}
+// 	target, err := search.GetElementByName(&graph, targetName)
+// 	if err != nil {
+// 		log.Fatalf("Error: element '%s' not found.\n", targetName)
+// 	}
 
-	fmt.Printf("Crafting path to: %s\n", targetName)
-	paths := BFS(target, maxPaths)
-	fmt.Printf("Found %d crafting paths:\n", len(paths))
-	for i, path := range paths {
-		fmt.Printf("Path #%d:\n", i+1)
-		PrintCraftingPath(path)
-		fmt.Println()
-	}
+// 	fmt.Printf("Crafting path to: %s\n", targetName)
+// 	paths := BFS(target, maxPaths)
+// 	fmt.Printf("Found %d crafting paths:\n", len(paths))
+// 	for i, path := range paths {
+// 		fmt.Printf("Path #%d:\n", i+1)
+// 		PrintCraftingPath(path)
+// 		fmt.Println()
+// 	}
 
-}
+// }
