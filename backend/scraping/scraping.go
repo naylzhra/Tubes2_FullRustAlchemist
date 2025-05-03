@@ -120,7 +120,7 @@ func ScrapeRecipes() error {
 
 func GetScrapedRecipesJSON() (RecipeEntry, error) {
 	// Read the JSON file
-	filename := "scraping/recipes.json"
+	filename := "recipes.json"
 	file, err := os.Open(filename)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -141,7 +141,7 @@ func GetScrapedRecipesJSON() (RecipeEntry, error) {
 
 func exportJSON(recipesJSON RecipeEntry) (string, error) {
 	// Create the JSON file
-	filename := "scraping/recipes.json"
+	filename := "recipes.json"
 	file, err := os.Create(filename)
 	if err != nil {
 		fmt.Println("Error:", err)
