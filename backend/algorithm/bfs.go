@@ -24,7 +24,7 @@ func (q *Queue[T]) IsEmpty() bool {
 }
 
 // Kalo shortest path, maxPathsnya = 1
-func BFS(graph *search.RecipeGraph, target *search.ElementNode, maxPaths int) [][]*search.ElementNode {
+func BFS(target *search.ElementNode, maxPaths int) [][]*search.ElementNode {
 	type PathNode struct {
 		Path []*search.ElementNode
 	}
@@ -114,7 +114,7 @@ func PrintCraftingPath(path []*search.ElementNode) {
 // 	}
 
 // 	fmt.Printf("Crafting path to: %s\n", targetName)
-// 	paths := BFS(&graph, target, maxPaths)
+// 	paths := BFS(target, maxPaths)
 // 	fmt.Printf("Found %d crafting paths:\n", len(paths))
 // 	for i, path := range paths {
 // 		fmt.Printf("Path #%d:\n", i+1)
