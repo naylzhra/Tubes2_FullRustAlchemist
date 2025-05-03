@@ -1,8 +1,14 @@
-package algorithm
+package main
 
 import (
+	"backend/scraping"
 	"backend/search"
+	"bufio"
 	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"strings"
 )
 
 type Queue[T any] struct {
@@ -33,7 +39,16 @@ func BFS(target *search.ElementNode, maxPaths int) [][]*search.ElementNode {
 	queue.Enqueue(PathNode{Path: []*search.ElementNode{target}})
 
 	var results [][]*search.ElementNode
-	visited := make(map[string]bool)
+	//visited := make(map[string]bool)
+
+	containsNode := func(path []*search.ElementNode, node *search.ElementNode) bool {
+		for _, n := range path {
+			if n.ID == node.ID {
+				return true
+			}
+		}
+		return false
+	}
 
 	for !queue.IsEmpty() && len(results) < maxPaths {
 		curr := queue.Dequeue()
@@ -49,11 +64,19 @@ func BFS(target *search.ElementNode, maxPaths int) [][]*search.ElementNode {
 				continue
 			}
 			a, b := recipe[0], recipe[1]
-			key := fmt.Sprintf("%d+%d->%d", a.ID, b.ID, currentNode.ID)
-			if visited[key] {
+
+			// if a.ID > b.ID {
+			// 	a, b = b, a
+			// }
+			// key := fmt.Sprintf("%d+%d->%d", a.ID, b.ID, currentNode.ID)
+			// if visited[key] {
+			// 	continue
+			// }
+			// visited[key] = true
+
+			if containsNode(curr.Path, a) || containsNode(curr.Path, b) {
 				continue
 			}
-			visited[key] = true
 
 			newPath := append([]*search.ElementNode{a, b}, curr.Path...)
 			queue.Enqueue(PathNode{Path: newPath})
@@ -78,48 +101,48 @@ func PrintCraftingPath(path []*search.ElementNode) {
 	}
 }
 
-// func main() {
-// 	err := scraping.ScrapeRecipes()
-// 	if err != nil {
-// 		log.Fatal("Error while scraping recipes:", err)
-// 	}
+func main() {
+	err := scraping.ScrapeRecipes()
+	if err != nil {
+		log.Fatal("Error while scraping recipes:", err)
+	}
 
-// 	recipes, err := scraping.GetScrapedRecipesJSON()
-// 	if err != nil {
-// 		log.Fatal("Error loading recipes from JSON:", err)
-// 	}
+	recipes, err := scraping.GetScrapedRecipesJSON()
+	if err != nil {
+		log.Fatal("Error loading recipes from JSON:", err)
+	}
 
-// 	var graph search.RecipeGraph
-// 	err = search.ConstructRecipeGraph(recipes, &graph)
-// 	if err != nil {
-// 		log.Fatal("Error constructing recipe graph:", err)
-// 	}
+	var graph search.RecipeGraph
+	err = search.ConstructRecipeGraph(recipes, &graph)
+	if err != nil {
+		log.Fatal("Error constructing recipe graph:", err)
+	}
 
-// 	fmt.Print("Enter target element name: ")
-// 	reader := bufio.NewReader(os.Stdin)
-// 	targetName, _ := reader.ReadString('\n')
-// 	targetName = strings.TrimSpace(targetName)
+	fmt.Print("Enter target element name: ")
+	reader := bufio.NewReader(os.Stdin)
+	targetName, _ := reader.ReadString('\n')
+	targetName = strings.TrimSpace(targetName)
 
-// 	fmt.Print("Enter maximum number of crafting paths to show: ")
-// 	inputMax, _ := reader.ReadString('\n')
-// 	inputMax = strings.TrimSpace(inputMax)
-// 	maxPaths, err := strconv.Atoi(inputMax)
-// 	if err != nil || maxPaths <= 0 {
-// 		log.Fatalf("Invalid number: %v\n", inputMax)
-// 	}
+	fmt.Print("Enter maximum number of crafting paths to show: ")
+	inputMax, _ := reader.ReadString('\n')
+	inputMax = strings.TrimSpace(inputMax)
+	maxPaths, err := strconv.Atoi(inputMax)
+	if err != nil || maxPaths <= 0 {
+		log.Fatalf("Invalid number: %v\n", inputMax)
+	}
 
-// 	target, err := search.GetElementByName(&graph, targetName)
-// 	if err != nil {
-// 		log.Fatalf("Error: element '%s' not found.\n", targetName)
-// 	}
+	target, err := search.GetElementByName(&graph, targetName)
+	if err != nil {
+		log.Fatalf("Error: element '%s' not found.\n", targetName)
+	}
 
-// 	fmt.Printf("Crafting path to: %s\n", targetName)
-// 	paths := BFS(target, maxPaths)
-// 	fmt.Printf("Found %d crafting paths:\n", len(paths))
-// 	for i, path := range paths {
-// 		fmt.Printf("Path #%d:\n", i+1)
-// 		PrintCraftingPath(path)
-// 		fmt.Println()
-// 	}
+	fmt.Printf("Crafting path to: %s\n", targetName)
+	paths := BFS(target, maxPaths)
+	fmt.Printf("Found %d crafting paths:\n", len(paths))
+	for i, path := range paths {
+		fmt.Printf("Path #%d:\n", i+1)
+		PrintCraftingPath(path)
+		fmt.Println()
+	}
 
-// }
+}
