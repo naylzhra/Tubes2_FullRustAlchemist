@@ -38,18 +38,20 @@ type GraphJSONWithRecipes struct {
 	Recipes []JSONRecipe `json:"recipes"`
 }
 
-func ReverseBFS(target *search.ElementNode, maxRecipes int) *GraphJSONWithRecipes {
-	type queueItem struct {
-		Node *search.ElementNode
+func ReverseBFS(target *search.ElementNode, maxPaths int) *GraphJSONWithRecipes {
+	type pathItem struct {
+		Node      *search.ElementNode
+		PathDepth int
 	}
 
 	visited := make(map[int32]bool)
-	queue := []queueItem{{Node: target}}
 	nodes := make(map[int32]JSONNode)
 	var recipes []JSONRecipe
-	recipeCount := 0
 
-	for len(queue) > 0 && recipeCount < maxRecipes {
+	queue := []pathItem{{Node: target, PathDepth: 0}}
+	pathsUsed := 0
+
+	for len(queue) > 0 && pathsUsed < maxPaths {
 		curr := queue[0]
 		queue = queue[1:]
 
@@ -59,49 +61,45 @@ func ReverseBFS(target *search.ElementNode, maxRecipes int) *GraphJSONWithRecipe
 		visited[curr.Node.ID] = true
 		nodes[curr.Node.ID] = JSONNode{ID: curr.Node.ID, Name: curr.Node.Name}
 
+		// Jika node ini adalah base element, langsung tambahkan resep [0, 0]
 		if isBaseElement(curr.Node) {
 			recipes = append(recipes, JSONRecipe{
 				Ingredients: []int32{0, 0},
 				Result:      curr.Node.ID,
 			})
-			recipeCount++
 			continue
 		}
 
+		// Cek semua resep yang dimiliki node ini
 		for _, recipe := range curr.Node.Recipes {
-			// Skip invalid recipes (empty ingredients)
-			if len(recipe) < 2 || (recipe[0] == nil && recipe[1] == nil) {
+			if pathsUsed >= maxPaths {
+				break
+			}
+			if len(recipe) != 2 || recipe[0] == nil || recipe[1] == nil {
 				continue
 			}
 
-			var ingredients []int32
-			skip := false
-
-			for _, parent := range recipe {
-				if parent == nil {
-					skip = true
-					break
-				}
-				ingredients = append(ingredients, parent.ID)
-				nodes[parent.ID] = JSONNode{ID: parent.ID, Name: parent.Name}
-
-				if !visited[parent.ID] && !isBaseElement(parent) {
-					queue = append(queue, queueItem{Node: parent})
-				}
-			}
-
-			if skip {
-				continue
-			}
-
+			// Simpan resep valid
 			recipes = append(recipes, JSONRecipe{
-				Ingredients: ingredients,
+				Ingredients: []int32{recipe[0].ID, recipe[1].ID},
 				Result:      curr.Node.ID,
 			})
-			recipeCount++
+			pathsUsed++
+
+			// Tambahkan parent nodes ke antrian untuk ditelusuri
+			for _, parent := range recipe {
+				if parent != nil {
+					nodes[parent.ID] = JSONNode{ID: parent.ID, Name: parent.Name}
+					if !visited[parent.ID] {
+						queue = append(queue, pathItem{Node: parent, PathDepth: curr.PathDepth + 1})
+					}
+				}
+			}
+			break // hanya satu path per node sesuai BFS
 		}
 	}
 
+	// Susun nodeList dari map
 	var nodeList []JSONNode
 	for _, node := range nodes {
 		nodeList = append(nodeList, node)
