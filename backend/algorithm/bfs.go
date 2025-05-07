@@ -2,98 +2,178 @@ package algorithm
 
 import (
 	"backend/search"
-	"fmt"
 )
 
-type Queue[T any] struct {
-	data []T
+type JSONNode struct {
+	ID   int32  `json:"id"`
+	Name string `json:"name"`
 }
 
-func (q *Queue[T]) Enqueue(value T) {
-	q.data = append(q.data, value)
+type JSONEdge struct {
+	From int32 `json:"from"`
+	To   int32 `json:"to"`
 }
 
-func (q *Queue[T]) Dequeue() T {
-	val := q.data[0]
-	q.data = q.data[1:]
-	return val
+type GraphJSON struct {
+	Nodes []JSONNode `json:"nodes"`
+	Edges []JSONEdge `json:"edges"`
 }
 
-func (q *Queue[T]) IsEmpty() bool {
-	return len(q.data) == 0
-}
-
-// Kalo shortest path, maxPathsnya = 1
-func BFS(target *search.ElementNode, maxPaths int) [][]*search.ElementNode {
-	type PathNode struct {
-		Path []*search.ElementNode
-	}
-
-	queue := Queue[PathNode]{}
-	queue.Enqueue(PathNode{Path: []*search.ElementNode{target}})
-
-	var results [][]*search.ElementNode
-	//visited := make(map[string]bool)
-
-	containsNode := func(path []*search.ElementNode, node *search.ElementNode) bool {
-		for _, n := range path {
-			if n.ID == node.ID {
-				return true
-			}
+func isBaseElement(node *search.ElementNode) bool {
+	for _, recipe := range node.Recipes {
+		if len(recipe) == 2 && recipe[0].Name == "" && recipe[1].Name == "" {
+			return true
 		}
-		return false
+	}
+	return false
+}
+
+type JSONRecipe struct {
+	Ingredients []int32 `json:"ingredients"`
+	Result      int32   `json:"result"`
+}
+
+type GraphJSONWithRecipes struct {
+	Nodes   []JSONNode   `json:"nodes"`
+	Recipes []JSONRecipe `json:"recipes"`
+}
+
+func ReverseBFS(target *search.ElementNode, maxRecipes int) *GraphJSONWithRecipes {
+	type queueItem struct {
+		Node *search.ElementNode
 	}
 
-	for !queue.IsEmpty() && len(results) < maxPaths {
-		curr := queue.Dequeue()
-		currentNode := curr.Path[0]
+	visited := make(map[int32]bool)
+	queue := []queueItem{{Node: target}}
+	nodes := make(map[int32]JSONNode)
+	var recipes []JSONRecipe
+	recipeCount := 0
 
-		if len(currentNode.Recipes) == 0 {
-			results = append(results, curr.Path)
+	for len(queue) > 0 && recipeCount < maxRecipes {
+		curr := queue[0]
+		queue = queue[1:]
+
+		if visited[curr.Node.ID] {
+			continue
+		}
+		visited[curr.Node.ID] = true
+		nodes[curr.Node.ID] = JSONNode{ID: curr.Node.ID, Name: curr.Node.Name}
+
+		if isBaseElement(curr.Node) {
+			recipes = append(recipes, JSONRecipe{
+				Ingredients: []int32{0, 0},
+				Result:      curr.Node.ID,
+			})
+			recipeCount++
 			continue
 		}
 
-		for _, recipe := range currentNode.Recipes {
-			if len(recipe) != 2 {
-				continue
-			}
-			a, b := recipe[0], recipe[1]
-
-			// if a.ID > b.ID {
-			// 	a, b = b, a
-			// }
-			// key := fmt.Sprintf("%d+%d->%d", a.ID, b.ID, currentNode.ID)
-			// if visited[key] {
-			// 	continue
-			// }
-			// visited[key] = true
-
-			if containsNode(curr.Path, a) || containsNode(curr.Path, b) {
+		for _, recipe := range curr.Node.Recipes {
+			// Skip invalid recipes (empty ingredients)
+			if len(recipe) < 2 || (recipe[0] == nil && recipe[1] == nil) {
 				continue
 			}
 
-			newPath := append([]*search.ElementNode{a, b}, curr.Path...)
-			queue.Enqueue(PathNode{Path: newPath})
+			var ingredients []int32
+			skip := false
+
+			for _, parent := range recipe {
+				if parent == nil {
+					skip = true
+					break
+				}
+				ingredients = append(ingredients, parent.ID)
+				nodes[parent.ID] = JSONNode{ID: parent.ID, Name: parent.Name}
+
+				if !visited[parent.ID] && !isBaseElement(parent) {
+					queue = append(queue, queueItem{Node: parent})
+				}
+			}
+
+			if skip {
+				continue
+			}
+
+			recipes = append(recipes, JSONRecipe{
+				Ingredients: ingredients,
+				Result:      curr.Node.ID,
+			})
+			recipeCount++
 		}
 	}
 
-	return results
-}
-
-func PrintCraftingPath(path []*search.ElementNode) {
-	if len(path) == 0 {
-		fmt.Println("No crafting path found.")
-		return
+	var nodeList []JSONNode
+	for _, node := range nodes {
+		nodeList = append(nodeList, node)
 	}
 
-	for i := len(path) - 1; i >= 1; i -= 2 {
-		if path[i-1].Name == "" && path[i-2].Name == "" {
-			continue
-		} else {
-			fmt.Printf("%s => %s + %s\n", path[i].Name, path[i-1].Name, path[i-2].Name)
-		}
+	return &GraphJSONWithRecipes{
+		Nodes:   nodeList,
+		Recipes: recipes,
 	}
 }
+
+// func PrintCraftingRecipesFromJSON(jsonData []byte, targetName string) {
+// 	var graph GraphJSON
+// 	err := json.Unmarshal(jsonData, &graph)
+// 	if err != nil {
+// 		fmt.Println("Error parsing JSON:", err)
+// 		return
+// 	}
+
+// 	// Buat map ID -> Node dan Name -> ID
+// 	idToNode := make(map[int32]JSONNode)
+// 	nameToID := make(map[string]int32)
+// 	for _, node := range graph.Nodes {
+// 		idToNode[node.ID] = node
+// 		nameToID[node.Name] = node.ID
+// 	}
+
+// 	targetID, ok := nameToID[targetName]
+// 	if !ok {
+// 		fmt.Println("Target not found in nodes:", targetName)
+// 		return
+// 	}
+
+// 	// Bangun reverse map To → list of From
+// 	childToParents := make(map[int32][]int32)
+// 	for _, edge := range graph.Edges {
+// 		childToParents[edge.To] = append(childToParents[edge.To], edge.From)
+// 	}
+
+// 	// DFS recursive untuk kumpulkan kombinasi
+// 	var result [][]int32
+// 	var dfs func(currID int32, path []int32)
+
+// 	dfs = func(currID int32, path []int32) {
+// 		path = append([]int32{currID}, path...)
+
+// 		parents, exists := childToParents[currID]
+// 		if !exists || len(parents) == 0 {
+// 			result = append(result, path)
+// 			return
+// 		}
+
+// 		for _, parentID := range parents {
+// 			dfs(parentID, path)
+// 		}
+// 	}
+
+// 	dfs(targetID, []int32{})
+
+// 	// Cetak kombinasi resep
+// 	fmt.Printf("Crafting recipes to form: %s\n", targetName)
+// 	for i, recipe := range result {
+// 		fmt.Printf("Path %d: ", i+1)
+// 		for j, id := range recipe {
+// 			if j > 0 {
+// 				fmt.Print(" + ")
+// 			}
+// 			fmt.Print(idToNode[id].Name)
+// 		}
+// 		fmt.Println()
+// 	}
+// }
 
 // func main() {
 // 	err := scraping.ScrapeRecipes()
@@ -116,7 +196,6 @@ func PrintCraftingPath(path []*search.ElementNode) {
 // 	reader := bufio.NewReader(os.Stdin)
 // 	targetName, _ := reader.ReadString('\n')
 // 	targetName = strings.TrimSpace(targetName)
-
 // 	fmt.Print("Enter maximum number of crafting paths to show: ")
 // 	inputMax, _ := reader.ReadString('\n')
 // 	inputMax = strings.TrimSpace(inputMax)
@@ -129,14 +208,17 @@ func PrintCraftingPath(path []*search.ElementNode) {
 // 	if err != nil {
 // 		log.Fatalf("Error: element '%s' not found.\n", targetName)
 // 	}
-
 // 	fmt.Printf("Crafting path to: %s\n", targetName)
-// 	paths := BFS(target, maxPaths)
-// 	fmt.Printf("Found %d crafting paths:\n", len(paths))
-// 	for i, path := range paths {
-// 		fmt.Printf("Path #%d:\n", i+1)
-// 		PrintCraftingPath(path)
-// 		fmt.Println()
-// 	}
+// 	result := ReverseBFS(target, maxPaths)
 
+// 	jsonBytes, err := json.MarshalIndent(result, "", "  ")
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	err = os.WriteFile("graph_output.json", jsonBytes, 0644)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	// Mencetak resep crafting untuk target
+// 	//PrintCraftingRecipesFromJSON(jsonBytes, target.Name)
 // }
