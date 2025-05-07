@@ -5,81 +5,113 @@ import (
 	"fmt"
 )
 
-// PrintCraftingPath prints the crafting steps for a given path
+/* ---------- helpers ---------- */
+
+// ---------- helpers (unchanged) ----------
+var primordial = map[string]struct{}{
+	"Air": {}, "Water": {}, "Fire": {}, "Earth": {},
+}
+func isBaseElement(n *search.ElementNode) bool {
+	if n == nil {
+		return false
+	}
+	if _, ok := primordial[n.Name]; ok {
+		return true
+	}
+	return len(n.Recipes) == 0
+}
+
+// ---------- pretty‑printer (tiny tweak: fixed‑step loop) ----------
 func PrintCraftingPath(path []*search.ElementNode) {
 	if len(path) == 0 {
 		fmt.Println("No crafting path found.")
 		return
 	}
+	fmt.Printf("Crafting path for %s:\n", path[0].Name)
 
-	for i := len(path) - 1; i >= 1; i -= 2 {
-		if i-1 < 0 || i-2 < 0 {
-			break
-		}
-		if path[i-1].Name == "" && path[i-2].Name == "" {
+	for i := 0; i < len(path); {
+		// sentinel (ID==0) marks a plain base line
+		if path[i].ID == 0 { break }
+
+		// last item in the slice can be "<product> (base element)"
+		if i+1 < len(path) && path[i+1].ID == 0 {
+			fmt.Printf("%s <= (base element)\n", path[i].Name)
+			i += 2
 			continue
-		} else {
-			fmt.Printf("%s => %s + %s\n", path[i].Name, path[i-1].Name, path[i-2].Name)
 		}
+
+		// normal triple
+		product, ing1, ing2 := path[i], path[i+1], path[i+2]
+		sfx := func(n *search.ElementNode) string {
+			if isBaseElement(n) { return " (base)" }
+			return ""
+		}
+		fmt.Printf("%s <= %s%s + %s%s\n",
+			product.Name, ing1.Name, sfx(ing1), ing2.Name, sfx(ing2))
+		i += 3
 	}
 }
 
+// ---------- DFS with correct path building & branch isolation ----------
 func DFS(target *search.ElementNode, maxPaths int) [][]*search.ElementNode {
-	type StackFrame struct {
-		Path []*search.ElementNode
-	}
-
-	var stack []StackFrame
-	stack = append(stack, StackFrame{Path: []*search.ElementNode{target}})
-
-	var results [][]*search.ElementNode
 	visited := make(map[string]bool)
+	var results [][]*search.ElementNode
+	sentinel := &search.ElementNode{ID: 0, Name: "BASE"}
 
-	containsNode := func(path []*search.ElementNode, node *search.ElementNode) bool {
-		for _, n := range path {
-			if n.ID == node.ID {
-				return true
-			}
-		}
-		return false
-	}
-
-	for len(stack) > 0 && len(results) < maxPaths {
-		// Pop from stack
-		lastIdx := len(stack) - 1
-		curr := stack[lastIdx]
-		stack = stack[:lastIdx]
-
-		currentNode := curr.Path[0]
-
-		if len(currentNode.Recipes) == 0 {
-			results = append(results, curr.Path)
-			continue
+	var explore func(el *search.ElementNode, cur []*search.ElementNode)
+	explore = func(el *search.ElementNode, cur []*search.ElementNode) {
+		if len(results) >= maxPaths {
+			return
 		}
 
-		for _, recipe := range currentNode.Recipes {
-			if len(recipe) != 2 {
-				continue
-			}
-			a, b := recipe[0], recipe[1]
+		// leaf ----------------------------------------------------------------
+		if isBaseElement(el) {
+			cp := append([]*search.ElementNode(nil), cur...)
+			cp = append(cp, el, sentinel) // show "<leaf> <= (base element)"
+			results = append(results, cp)
+			return
+		}
 
-			key := fmt.Sprintf("%d+%d->%d", a.ID, b.ID, currentNode.ID)
-			if visited[key] {
-				continue
-			}
+		// internal node -------------------------------------------------------
+		for _, r := range el.Recipes {
+			if len(r) != 2 { continue }
+			ing1, ing2 := r[0], r[1]
+
+			key := fmt.Sprintf("%d:%d:%d", el.ID, ing1.ID, ing2.ID)
+			if visited[key] { continue }
 			visited[key] = true
 
-			if containsNode(curr.Path, a) || containsNode(curr.Path, b) {
-				continue
-			}
+			// **add the whole triple**, not only the two ingredients
+			base := append(append([]*search.ElementNode(nil), cur...),
+				el, ing1, ing2)
 
-			newPathA := append([]*search.ElementNode{a}, curr.Path...)
-			stack = append(stack, StackFrame{Path: newPathA})
-			
-			newPathB := append([]*search.ElementNode{b}, curr.Path...)
-			stack = append(stack, StackFrame{Path: newPathB})
+			b1, b2 := isBaseElement(ing1), isBaseElement(ing2)
+
+			switch {
+			case b1 && b2:
+				results = append(results, base)
+
+			case b1 && !b2:
+				explore(ing2, base)
+
+			case !b1 && b2:
+				explore(ing1, base)
+
+			default: // both expandable – explore on two *independent* copies
+				left  := append([]*search.ElementNode(nil), base...)
+				right := append([]*search.ElementNode(nil), base...)
+				explore(ing1, left)
+				explore(ing2, right)
+			}
 		}
 	}
 
+	explore(target, nil)
 	return results
+}
+
+// ---------- wrapper (unchanged except for name) ----------
+func FindCraftingPaths(el *search.ElementNode, max int) [][]*search.ElementNode {
+	paths := DFS(el, max)
+	return paths
 }
