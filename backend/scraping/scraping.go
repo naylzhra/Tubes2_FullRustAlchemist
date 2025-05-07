@@ -3,6 +3,7 @@ package scraping
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -14,13 +15,15 @@ import (
 type RecipeEntry struct {
 	Element []string              `json:"element"`
 	Recipe  map[string][][]string `json:"recipe"`
+	Icon    map[string]string     `json:"icon"`
 }
 
 func ScrapeRecipes() error {
+	url := "https://little-alchemy.fandom.com/wiki/Elements_(Little_Alchemy_2)"
+	icons_path := "scraping/icons/"
 	startTime := time.Now()
 
-	// URL of the page to scrape
-	url := "https://little-alchemy.fandom.com/wiki/Elements_(Little_Alchemy_2)"
+	// Scrape page
 	doc, err := getHTMLDocument(url)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -32,6 +35,7 @@ func ScrapeRecipes() error {
 	recipesJSON := RecipeEntry{
 		Element: make([]string, 0),
 		Recipe:  make(map[string][][]string),
+		Icon:    make(map[string]string),
 	}
 
 	// Scraping
@@ -57,6 +61,21 @@ func ScrapeRecipes() error {
 				element = strings.TrimSpace(element)
 				recipesJSON.Element = append(recipesJSON.Element, element)
 				recipesJSON.Recipe[element] = make([][]string, 0)
+
+				// Get icon
+				// Find image tag inside td tag
+				// Get the src attribute of the image tag
+				icon := columns.Eq(0).Find("img").AttrOr("data-src", "")
+				if icon != "" {
+					filename := icons_path + element + ".webp"
+					errIcom := downloadImage(icon, filename)
+					if errIcom != nil {
+						// fmt.Println("Error downloading image:", errIcom)
+						fmt.Println("Error downloading image:", icon)
+					} else {
+						recipesJSON.Icon[element] = filename
+					}
+				}
 			}
 
 		})
@@ -111,6 +130,7 @@ func ScrapeRecipes() error {
 	}
 	fmt.Println("Scraping completed. Recipes exported to ", filename)
 	fmt.Println("Number of elements:", len(recipesJSON.Element))
+	fmt.Println("Number of icons downloaded:", len(recipesJSON.Icon))
 	fmt.Println("Number of recipes loaded:", len(recipesJSON.Recipe))
 	fmt.Println("Total number of recipes:", total_recipes)
 	fmt.Println("Elapsed time:", elapsedTime.Milliseconds(), "ms")
@@ -175,4 +195,29 @@ func getHTMLDocument(url string) (*goquery.Document, error) {
 		return nil, err
 	}
 	return doc, nil
+}
+
+func downloadImage(url string, filename string) error {
+	res, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to download image: %s", res.Status)
+	}
+
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %v", err)
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, res.Body)
+	if err != nil {
+		return fmt.Errorf("failed to save image: %v", err)
+	}
+
+	return nil
 }
