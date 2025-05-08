@@ -32,7 +32,7 @@ const LandingPage = () => {
               possible ways to make it — including the simplest, shortest recipe.
             </p>
           </div>
-          <div className="mt-10 flex flex-wrap gap-5">
+          <div className="mt-10 flex flex-wrap gap-[18px]">
             <button className="py-3 px-5 bg-[#D6BD98] rounded-md text-sm font-semibold text-[#1A3636] transition duration-300 hover:scale-105 hover:shadow-[0_0_1rem_rgba(214,189,152,0.25)]">
               Shortest Recipe
             </button>
