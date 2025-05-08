@@ -7,10 +7,12 @@ const josefinSans = Josefin_Sans({
 
 const Footer = () => {
   return (
-    <div className="w-full border-t border-[#b3b3b3] bg-[var(--background)] px-10 md:px-10 py-[15px] flex items-center">
-      <p className={`ml-8 mr-6 font-semibold text-white ${josefinSans.className}`}>Contributors</p>
-      
-      <div className="flex space-x-10 text-sm text-white ml-8">
+    <div className="w-full border-t border-[#b3b3b3] bg-[var(--background)] px-[9vw] py-[3vh] flex items-center">
+      <p className={`mr-[2.5vw] font-semibold text-white text-[1rem] ${josefinSans.className}`}>
+        Contributors
+      </p>
+
+      <div className="flex gap-[2.5vw] text-[0.9rem] text-white">
         <p>Ranashahira Reztaputri</p>
         <p>Syahrizal Bani Khairan</p>
         <p>Nayla Zahira</p>

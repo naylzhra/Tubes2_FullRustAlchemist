@@ -10,10 +10,10 @@ const LandingPage = () => {
   return (
     <div className="max-h-screen flex flex-col bg-[var(--background)] overflow-y-hidden">
       {/* Konten Utama */}
-      <div className="flex flex-1 items-center px-32 my-[86px]">
+      <div className="flex flex-1 items-center justify-center gap-[14vw] px-[8vw] my-[12vh]">
         {/* Kiri: Teks dan Tombol */}
-        <div className="max-w-xl ml-[60px]">
-          <h1 className={`leading-14 text-5xl text-white font-bold ${josefinSans.className}`}>
+        <div className="max-w-xl">
+          <h1 className={`leading-[1.3] text-[3rem] text-white font-bold ${josefinSans.className}`}>
             Little<br />
             <span className="bg-gradient-to-br from-[#798772] to-[#D6BD98] bg-clip-text text-transparent">
               Alchemy
@@ -21,30 +21,32 @@ const LandingPage = () => {
             <br />
             Recipe Finder
           </h1>
-          <div className="mt-8">
-            <p className="font-semibold text-sm text-white">Looking for a recipe in Little Alchemy?</p>
-          </div>
-          <div className="mt-5">
-            <p className="text-xs text-white">
-              Just type the element you're curious about, and we'll show you all the possible<br />
-              ways to make it — including the simplest, shortest recipe.
+          <div className="mt-6">
+            <p className="font-semibold text-base text-white">
+              Looking for a recipe in Little Alchemy?
             </p>
           </div>
-          <div className="mt-10 flex">
-            <button className="py-3.5 px-6 bg-[#D6BD98] rounded-md text-xs font-semibold text-[#1A3636] transition duration-300 hover:scale-105 hover:shadow-[0_0px_15px_rgba(214,189,152,0.25)]">
-            Shortest Recipe
+          <div className="mt-4">
+            <p className="text-sm text-white leading-relaxed">
+              Just type the element you're curious about, and we'll show you all the<br />
+              possible ways to make it — including the simplest, shortest recipe.
+            </p>
+          </div>
+          <div className="mt-10 flex flex-wrap gap-4">
+            <button className="py-3 px-5 bg-[#D6BD98] rounded-md text-sm font-semibold text-[#1A3636] transition duration-300 hover:scale-105 hover:shadow-[0_0_1rem_rgba(214,189,152,0.25)]">
+              Shortest Recipe
             </button>
-            <button className="ml-5 py-3.5 px-6 bg-[#D6BD98] rounded-md text-xs font-semibold text-[#1A3636] transition duration-300 hover:scale-105 hover:shadow-[0_0px_15px_rgba(214,189,152,0.25)]">
-            Multiple Recipe
+            <button className="py-3 px-5 bg-[#D6BD98] rounded-md text-sm font-semibold text-[#1A3636] transition duration-300 hover:scale-105 hover:shadow-[0_0_1rem_rgba(214,189,152,0.25)]">
+              Multiple Recipe
             </button>
           </div>
         </div>
 
         {/* Kanan: Gambar Beaver */}
-        <div className="ml-[136px]">
+        <div>
           <img
             src="Beaver_2.svg"
-            className="w-[364px] h-auto drop-shadow-[0px_7px_5px_rgba(0,0,0,0.5)]"
+            className="w-[28vw] h-auto drop-shadow-[0px_0.5rem_0.3rem_rgba(0,0,0,0.5)]"
             alt="Beaver"
           />
         </div>
