@@ -1,11 +1,9 @@
 import React from "react";
-import Navbar from "../components/Navbar";
 import RecipeResult from "../components/RecipeResult";
 
 const Result = () => {
     return (
         <div>
-            <Navbar />
             <div className="flex flex-col items-center justify-center p-[2%]">
                 <p className="w-[510px] h-[58px] m-[5px] p-[10px] border border-[var(--foreground)] bg-[var(--foreground)] rounded-[12px] text-left align-middle">Acid Rain</p>
                 <div className="flex justify-between w-[510px] text-[#b3b3b3] m-[5px]">
