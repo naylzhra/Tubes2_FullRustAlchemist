@@ -10,7 +10,7 @@ const LandingPage = () => {
   return (
     <div className="max-h-screen flex flex-col bg-[var(--background)] overflow-y-hidden">
       {/* Konten Utama */}
-      <div className="flex flex-1 items-center justify-center gap-[15vw] px-[8vw] my-[12vh]">
+      <div className="flex flex-1 items-center justify-center gap-[15vw] px-[8vw] my-[12.25vh]">
         {/* Kiri: Teks dan Tombol */}
         <div className="max-w-xl">
           <h1 className={`leading-[1.3] text-[3rem] text-white font-bold ${josefinSans.className}`}>
@@ -32,11 +32,11 @@ const LandingPage = () => {
               possible ways to make it — including the simplest, shortest recipe.
             </p>
           </div>
-          <div className="mt-10 flex flex-wrap gap-[18px]">
-            <button className="py-3 px-5 bg-[#D6BD98] rounded-md text-sm font-semibold text-[#1A3636] transition duration-300 hover:scale-105 hover:shadow-[0_0_1rem_rgba(214,189,152,0.25)]">
+          <div className="mt-10 flex flex-wrap gap-5">
+            <button className="py-3 px-6 bg-[#D6BD98] rounded-md text-sm font-semibold text-[#1A3636] transition duration-300 hover:scale-105 hover:shadow-[0_0_1rem_rgba(214,189,152,0.25)]">
               Shortest Recipe
             </button>
-            <button className="py-3 px-5 bg-[#D6BD98] rounded-md text-sm font-semibold text-[#1A3636] transition duration-300 hover:scale-105 hover:shadow-[0_0_1rem_rgba(214,189,152,0.25)]">
+            <button className="py-3 px-6 bg-[#D6BD98] rounded-md text-sm font-semibold text-[#1A3636] transition duration-300 hover:scale-105 hover:shadow-[0_0_1rem_rgba(214,189,152,0.25)]">
               Multiple Recipe
             </button>
           </div>
