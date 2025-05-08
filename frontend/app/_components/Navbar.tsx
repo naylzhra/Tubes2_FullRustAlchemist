@@ -42,9 +42,9 @@ const Navbar = () => {
             />
             <text
                 className={`text-[#f3f3f3] text-lg leading-none ${josefinSans.className}`}
-                style={{
-                    textShadow: "0 0 5px #000000, 0 0 10px #000000",
-                }}
+                // style={{
+                //     textShadow: "0 0 5px #000000, 0 0 10px #000000",
+                // }}
             >
                 Home
             </text>
