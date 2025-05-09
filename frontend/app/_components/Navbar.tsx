@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Josefin_Sans } from "next/font/google";
+import { useRouter } from "next/navigation";
 
 const josefinSans = Josefin_Sans({
   subsets: ["latin"],
@@ -9,13 +10,14 @@ const josefinSans = Josefin_Sans({
 });
 
 const Navbar = () => {
+  const router = useRouter();
   // 0 = none, 1 = Shortest, 2 = Multiple
   const [choice, setChoice] = useState<number>(1);
 
   /* ----- styling helpers for the pill ----- */
   const wrapper =
     "grid grid-cols-2 items-center justify-center mx-[10px] p-0 h-[60%] " +
-    "w-[clamp(470px,20%,570px)] rounded-[200px] border-2 border-[var(--foreground)] " +
+    "w-96 rounded-[200px] border-2 border-[var(--foreground)] " +
     "bg-[var(--foreground)]";
   const highlight =
     "h-[85%] w-[95%] bg-[#FFFFFF] mx-[5px] text-[var(--foreground)] " +
@@ -24,9 +26,9 @@ const Navbar = () => {
     choice === n ? highlight : "flex justify-center items-center";
 
   return (
-    <div className="sticky top-0 z-50 h-auto w-full border-b border-[#b3b3b3] bg-[var(--background)] px-10 md:px-10 flex items-center justify-between">
+    <div className="sticky top-0 z-50 h-auto w-full border-b border-[#b3b3b3] bg-[var(--background)] pl-5 pr-10 flex items-center justify-between">
         {/* ---- logo area ---- */}
-        <div className="flex items-center gap-x-1 px-11">
+        <div className="flex items-center gap-x-1">
             <div
                 className="w-[50px] h-[50px] bg-[#d6bd98]"
                 style={{
@@ -39,6 +41,7 @@ const Navbar = () => {
                     maskPosition: "center",
                     WebkitMaskPosition: "center",
                 }}
+                onClick={() => router.push("/")}
             />
             <text
                 className={`text-[#f3f3f3] text-lg leading-none ${josefinSans.className}`}

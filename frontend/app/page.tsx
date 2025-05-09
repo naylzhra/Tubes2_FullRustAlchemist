@@ -1,4 +1,6 @@
+"use client";
 import { Josefin_Sans } from "next/font/google";
+import { useRouter } from "next/navigation";
 import Footer from "./_components/Footer";
 
 const josefinSans = Josefin_Sans({
@@ -7,6 +9,7 @@ const josefinSans = Josefin_Sans({
 });
 
 const LandingPage = () => {
+  const Router = useRouter();
   return (
     <div className="max-h-screen flex flex-col bg-[var(--background)] overflow-y-hidden">
       {/* Konten Utama */}
@@ -33,10 +36,14 @@ const LandingPage = () => {
             </p>
           </div>
           <div className="mt-10 flex flex-wrap gap-5">
-            <button className="py-3 px-6 bg-[#D6BD98] rounded-md text-sm font-semibold text-[#1A3636] transition duration-300 hover:scale-105 hover:shadow-[0_0_1rem_rgba(214,189,152,0.25)]">
+            <button 
+              onClick={() => Router.push("/single-recipe")} 
+              className="py-3 px-6 bg-[#D6BD98] rounded-md text-sm font-semibold text-[#1A3636] transition duration-300 hover:scale-105 hover:shadow-[0_0_1rem_rgba(214,189,152,0.25)]">
               Shortest Recipe
             </button>
-            <button className="py-3 px-6 bg-[#D6BD98] rounded-md text-sm font-semibold text-[#1A3636] transition duration-300 hover:scale-105 hover:shadow-[0_0_1rem_rgba(214,189,152,0.25)]">
+            <button 
+              onClick={() => Router.push("/multiple-recipe")}
+              className="py-3 px-6 bg-[#D6BD98] rounded-md text-sm font-semibold text-[#1A3636] transition duration-300 hover:scale-105 hover:shadow-[0_0_1rem_rgba(214,189,152,0.25)]">
               Multiple Recipe
             </button>
           </div>
