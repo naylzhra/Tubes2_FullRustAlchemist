@@ -39,7 +39,7 @@ const LandingPage = () => {
             <button 
               onClick={() => Router.push("/single-recipe")} 
               className="py-3 px-6 bg-[#D6BD98] rounded-md text-sm font-semibold text-[#1A3636] transition duration-300 hover:scale-105 hover:shadow-[0_0_1rem_rgba(214,189,152,0.25)]">
-              Shortest Recipe
+              Single Recipe
             </button>
             <button 
               onClick={() => Router.push("/multiple-recipe")}
