@@ -33,25 +33,22 @@ const handleInputNumR = (e) => {
 
 return (
   <div className="min-h-screen text-white p-8">
-    <div className="flex h-12"></div>
     {/* Title */}
-    <div className="text-center items-center">
+    <div className="mt-4 text-center items-center">
       <h1 className={`text-6xl font-bold text-white ${josefinSans.className}`}>
         Little <span className="bg-gradient-to-br from-purple-[#798772] to-[#D6BD98] bg-clip-text text-transparent">Alchemy</span> Recipe
       </h1>
     </div>
-    <div className='flex h-3'></div>
-    <div className="flex flex-col items-center h-10">
+    <div className="mt-3 flex flex-col items-center h-10">
       <div className="flex justify-center">
         <text className="text-white text-sm">
           Enter maximum number of recipes to show:
         </text>
-        <div className="flex w-2"></div>
         <input
             type="text"
             value={selectedNumR}
             onChange={(e) => setSelectedNumR(Number(e.target.value))}
-            className="w-10 h-4.5 bg-[#40534C] rounded text-white text-center"
+            className="ml-3 w-10 h-4.5 bg-[#40534C] rounded text-white text-center"
         />
       </div>
     </div>
