@@ -7,11 +7,12 @@ const josefinSans = Josefin_Sans({
   weight: ['700'],
 });
 
-const SingleRecipePage = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedAlgo, setSelectedAlgo] = useState(1); // 0 = none, 1 = BFS, 2 = DFS
-  
-  // Mock data for element grid
+const MultipleRecipePage = () => {
+const [searchQuery, setSearchQuery] = useState('');
+const [selectedAlgo, setSelectedAlgo] = useState(1); // 0 = none, 1 = BFS, 2 = DFS
+const [selectedNumR, setSelectedNumR] = useState(5); //num of recipes
+
+// Mock data for element grid
 const elements = Array(16).fill(null);
 
 const handleSearch = () => {
@@ -22,8 +23,12 @@ const handleSearch = () => {
   // Implement actual search functionality here
 };
 
-const handleInputChange = (e) => {
+const handleInputQuery = (e) => {
   setSearchQuery(e.target.value);
+};
+
+const handleInputNumR = (e) => {
+  setSelectedNumR(Number(e.target.value));
 };
 
 return (
@@ -35,7 +40,21 @@ return (
         Little <span className="bg-gradient-to-br from-purple-[#798772] to-[#D6BD98] bg-clip-text text-transparent">Alchemy</span> Recipe
       </h1>
     </div>
-    <div className="flex h-10"></div>
+    <div className='flex h-3'></div>
+    <div className="flex flex-col items-center h-10">
+      <div className="flex justify-center">
+        <text className="text-white text-sm">
+          Enter maximum number of recipes to show:
+        </text>
+        <div className="flex w-2"></div>
+        <input
+            type="text"
+            value={selectedNumR}
+            onChange={(e) => setSelectedNumR(Number(e.target.value))}
+            className="w-10 h-4.5 bg-[#40534C] rounded text-white text-center"
+        />
+      </div>
+    </div>
     <div className="flex flex-col items-center">
       <div className="flex justify-center h-10 space-x-3 gap-3">
         <div className="flex items-center">
@@ -52,8 +71,8 @@ return (
             type="text"
             placeholder="Which element recipe are you looking for?"
             value={searchQuery}
-            onChange={handleInputChange}
-            className="w-full h-full bg-transparent text-white text-center placeholder-[#B3B3B3] px-4"
+            onChange={handleInputQuery}
+            className="w-full h-full bg-transparent text-center text-white placeholder-[#B3B3B3] px-4"
           />
         </div>
         <button 
@@ -73,4 +92,4 @@ return (
   );
 } 
 
-export default SingleRecipePage;
+export default MultipleRecipePage;

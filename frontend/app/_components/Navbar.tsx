@@ -53,7 +53,7 @@ const Navbar = () => {
         {/* ---- toggle pill ---- */}
         <div className={wrapper}>
             <p className={maybeHighlight(1)} onClick={() => setChoice(1)}>
-                Shortest recipe
+                Single recipe
             </p>
             <p className={maybeHighlight(2)} onClick={() => setChoice(2)}>
                 Multiple recipe
