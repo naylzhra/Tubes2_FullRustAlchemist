@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Josefin_Sans } from 'next/font/google';
 
 const josefinSans = Josefin_Sans({
@@ -8,18 +9,33 @@ const josefinSans = Josefin_Sans({
 });
 
 const SingleRecipePage = () => {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAlgo, setSelectedAlgo] = useState(1); // 0 = none, 1 = BFS, 2 = DFS
   
   // Mock data for element grid
 const elements = Array(16).fill(null);
 
-const handleSearch = () => {
+const handleSearch = async () => {
   if (!searchQuery.trim()) {
     return;
   }
   console.log(`Searching for: ${searchQuery} using ${selectedAlgo === 1 ? 'BFS' : 'DFS'}`);
-  // Implement actual search functionality here
+  const algo = selectedAlgo === 1 ? 'BFS' : 'DFS';
+  try {
+    const response = await fetch(`/api/recipe?element=${encodeURIComponent(searchQuery.trim())}&algo=${algo}`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+    }
+    const data = await response.json();
+    console.log(data);
+    router.push(
+    `/result?element=${encodeURIComponent(searchQuery.trim())}` +
+    `&algo=${algo}`
+  );
+  } catch (error) {
+    console.error("Error fetching recipe:", error);
+  }
 };
 
 const handleInputChange = (e) => {
