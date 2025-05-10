@@ -3,16 +3,34 @@ package algorithm
 import (
 	"backend/search"
 	"fmt"
+	"slices"
+	"sync"
 )
 
+type SearchStatus struct {
+	mu             sync.Mutex
+	routines       map[string]chan struct{}
+	foundPathCount map[string]int
+	prevElems		 map[string][]*search.ElementNode
+	complete       map[string]bool
+	target         string
+	maxPaths       int
+	resultGraph    *search.RecipeGraph
+}
+
+type ResultTree struct {
+	mu sync.Mutex
+	elements map[string][]*search.ElementNode
+}
+
 // PrintCraftingPath prints the crafting steps for a given path
-func PrintCraftingPath(path []*search.ElementNode) {
+func PrintCraftingPath(result *ResultTree) string {
 	if len(path) == 0 {
 		fmt.Println("No crafting path found.")
 		return
 	}
 
-	for i := len(path) - 1; i >= 1; i -= 2 {
+	for i := len(path) - 1; i >= 1; i -= 2 {''
 		if i-1 < 0 || i-2 < 0 {
 			break
 		}
@@ -24,62 +42,114 @@ func PrintCraftingPath(path []*search.ElementNode) {
 	}
 }
 
-func DFS(target *search.ElementNode, maxPaths int) [][]*search.ElementNode {
-	type StackFrame struct {
-		Path []*search.ElementNode
-	}
+func DFS(target *search.ElementNode, maxPaths int) []string {
+	// status := &SearchStatus{
+	// 	mu:             sync.Mutex{},
+	// 	routines:       make(map[string]chan struct{}),
+	// 	foundPathCount: make(map[string]int),
+	// 	complete:       make(map[string]bool),
+	// 	target:         target.Name,
+	// 	maxPaths:       maxPaths,
+	// 	resultGraph:    &search.RecipeGraph{},
+	// }
+	// search.ConstructElementsGraph(graph, status.resultGraph)
+	// // Create channel for each possible elements
+	// for _, element := range graph.Elements {
+	// 	status.routines[element.Name] = make(chan struct{})
+	// 	status.complete[element.Name] = false
+	// }
+	// // Mark base elements as compplete
+	// for _, element := range graph.BaseElements {
+	// 	status.foundPathCount[element.Name] = 1
+	// 	status.complete[element.Name] = true
+	// }
 
-	var stack []StackFrame
-	stack = append(stack, StackFrame{Path: []*search.ElementNode{target}})
+	// status.mu.Lock()
+	// status.foundPathCount[target.Name] = 0
+	// status.mu.Unlock()
 
-	var results [][]*search.ElementNode
-	visited := make(map[string]bool)
+	foundPaths := 0
+	completePathSignal := make(chan int)
+	result := ResultTree{sync.Mutex{}, make(map[string][]*search.ElementNode)}
+	resultJSONs := []string{}
+	// Start the DFS for the target element
+	go findPath(target, &result, completePathSignal)
 
-	containsNode := func(path []*search.ElementNode, node *search.ElementNode) bool {
-		for _, n := range path {
-			if n.ID == node.ID {
-				return true
-			}
+	for {
+		status := <-completePathSignal
+		if status == 0 {
+			break
+		} else if status == 1 {
+			foundPaths = foundPaths + 1
+			resultJSONs = append(resultJSONs, PrintCraftingPath(&result))
 		}
-		return false
 	}
 
-	for len(stack) > 0 && len(results) < maxPaths {
-		// Pop from stack
-		lastIdx := len(stack) - 1
-		curr := stack[lastIdx]
-		stack = stack[:lastIdx]
+	return resultJSONs
+}
 
-		currentNode := curr.Path[0]
+func updateCompletePath(node *search.ElementNode, status *SearchStatus, direct bool) {
+	
+}
 
-		if len(currentNode.Recipes) == 0 {
-			results = append(results, curr.Path)
+func findPath(target *search.ElementNode, graph *search.RecipeGraph, result *ResultTree, completePathSignal chan int, continueSearch chan struct{}, prevs []*search.ElementNode) {
+	defer func() {
+		completePathSignal <- 0
+		close(completePathSignal)
+	}()
+
+	// Generate thread for the two parents for a recipe (if not already created)
+	// Wait until the recipe is fully complete before checking another recipe of this node
+	for _, recipe := range target.Recipes {
+		if slices.Contains(graph.BaseElements, recipe[0]) && slices.Contains(graph.BaseElements, recipe[1]) {
+			completePathSignal <- 1
+			<-continueSearch
+			continue // No need to generate thread for base elements
+		}
+
+		// Decide whether to search for the parents of this element
+		if pathAlreadyContains(prevs, recipe[0]) || pathAlreadyContains(prevs, recipe[1]) {
 			continue
 		}
 
-		for _, recipe := range currentNode.Recipes {
-			if len(recipe) != 2 {
-				continue
-			}
-			a, b := recipe[0], recipe[1]
+		// Create a new thread for each parent of a recipe
+		currentPath := append([]*search.ElementNode{}, target)
+		currentPath = append([]*search.ElementNode{}, prevs...)
+		chan2 := make(chan int)
+		continueSearch1 := make(chan struct{})
+		continueSearch2 := make(chan struct{})
+		status1 := -1
+		status2 := -1
+		
+		// Let 
+		go findPath(recipe[1], graph, result, chan2, continueSearch2, currentPath)
+		while (status2 != 0 && status1 != 0) {
+			chan1 := make(chan int)
+			go findPath(recipe[0], graph, result, chan1, continueSearch1, currentPath)
 
-			key := fmt.Sprintf("%d+%d->%d", a.ID, b.ID, currentNode.ID)
-			if visited[key] {
-				continue
-			}
-			visited[key] = true
-
-			if containsNode(curr.Path, a) || containsNode(curr.Path, b) {
-				continue
-			}
-
-			newPathA := append([]*search.ElementNode{a}, curr.Path...)
-			stack = append(stack, StackFrame{Path: newPathA})
-			
-			newPathB := append([]*search.ElementNode{b}, curr.Path...)
-			stack = append(stack, StackFrame{Path: newPathB})
+			status1 = <-chan1
+			status2 = <-chan2
+			if ()
+			<-continueSearch
 		}
-	}
 
-	return results
+
+
+
+		// Wait until 
+
+		<-continueSearch
+		continueSearch1 <- struct{}{}
+		continueSearch2 <- struct{}{}
+	}
+}
+
+
+func pathAlreadyContains(prevs []*search.ElementNode, elem *search.ElementNode) bool {
+	for _, prev := range prevs {
+		if elem == prev {
+			return true
+		} 
+	}
+	return false
 }
