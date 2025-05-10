@@ -2,103 +2,60 @@ package algorithm
 
 import (
 	"backend/search"
+	"encoding/json"
 	"fmt"
+	"os"
 	"slices"
 	"sync"
 )
 
 type SearchStatus struct {
-	mu             sync.Mutex
-	routines       map[string]chan struct{}
-	foundPathCount map[string]int
-	prevElems		 map[string][]*search.ElementNode
-	complete       map[string]bool
-	target         string
-	maxPaths       int
-	resultGraph    *search.RecipeGraph
+	chan0           chan int
+	chan1           chan int
+	continueSearch0 chan struct{}
+	continueSearch1 chan struct{}
 }
 
 type ResultTree struct {
-	mu sync.Mutex
-	elements map[string][]*search.ElementNode
+	mu             sync.Mutex
+	elements       map[string][]*search.ElementNode
+	remainingPaths int
 }
 
-// PrintCraftingPath prints the crafting steps for a given path
-func PrintCraftingPath(result *ResultTree) string {
-	if len(path) == 0 {
-		fmt.Println("No crafting path found.")
-		return
-	}
-	fmt.Printf("Crafting path for %s:\n", path[0].Name)
-
-	for i := len(path) - 1; i >= 1; i -= 2 {''
-		if i-1 < 0 || i-2 < 0 {
-			break
-		}
-		if path[i-1].Name == "" && path[i-2].Name == "" {
-			continue
-		}
-
-		// normal triple
-		product, ing1, ing2 := path[i], path[i+1], path[i+2]
-		sfx := func(n *search.ElementNode) string {
-			if isBaseElement(n) { return " (base)" }
-			return ""
-		}
-		fmt.Printf("%s <= %s%s + %s%s\n",
-			product.Name, ing1.Name, sfx(ing1), ing2.Name, sfx(ing2))
-		i += 3
-	}
+type RecipeJSON struct {
+	Element string   `json:"element"`
+	Recipe  []string `json:"recipe"`
 }
 
-func DFS(target *search.ElementNode, maxPaths int) []string {
-	// status := &SearchStatus{
-	// 	mu:             sync.Mutex{},
-	// 	routines:       make(map[string]chan struct{}),
-	// 	foundPathCount: make(map[string]int),
-	// 	complete:       make(map[string]bool),
-	// 	target:         target.Name,
-	// 	maxPaths:       maxPaths,
-	// 	resultGraph:    &search.RecipeGraph{},
-	// }
-	// search.ConstructElementsGraph(graph, status.resultGraph)
-	// // Create channel for each possible elements
-	// for _, element := range graph.Elements {
-	// 	status.routines[element.Name] = make(chan struct{})
-	// 	status.complete[element.Name] = false
-	// }
-	// // Mark base elements as compplete
-	// for _, element := range graph.BaseElements {
-	// 	status.foundPathCount[element.Name] = 1
-	// 	status.complete[element.Name] = true
-	// }
-
-	// status.mu.Lock()
-	// status.foundPathCount[target.Name] = 0
-	// status.mu.Unlock()
-
+func DFS(target *search.ElementNode, graph *search.RecipeGraph, maxPaths int) []string {
 	foundPaths := 0
 	completePathSignal := make(chan int)
-	result := ResultTree{sync.Mutex{}, make(map[string][]*search.ElementNode)}
+	continueSearch := make(chan struct{})
+	result := ResultTree{
+		mu:             sync.Mutex{},
+		elements:       make(map[string][]*search.ElementNode),
+		remainingPaths: maxPaths,
+	}
 	resultJSONs := []string{}
 	// Start the DFS for the target element
-	go findPath(target, &result, completePathSignal)
+	go findPath(target, graph, &result, completePathSignal, continueSearch, []*search.ElementNode{})
 
 	for {
 		status := <-completePathSignal
 		if status == 0 {
 			break
 		} else if status == 1 {
-			foundPaths = foundPaths + 1
-			resultJSONs = append(resultJSONs, PrintCraftingPath(&result))
+			foundPaths++
+			result.mu.Lock()
+			result.remainingPaths--
+			resultJSONs = append(resultJSONs, ParseCraftingPath(&result, foundPaths))
+			result.mu.Unlock()
+
+			continueSearch <- struct{}{}
 		}
 	}
 
 	return resultJSONs
-}
-
-func updateCompletePath(node *search.ElementNode, status *SearchStatus, direct bool) {
-	
 }
 
 func findPath(target *search.ElementNode, graph *search.RecipeGraph, result *ResultTree, completePathSignal chan int, continueSearch chan struct{}, prevs []*search.ElementNode) {
@@ -110,10 +67,26 @@ func findPath(target *search.ElementNode, graph *search.RecipeGraph, result *Res
 	// Generate thread for the two parents for a recipe (if not already created)
 	// Wait until the recipe is fully complete before checking another recipe of this node
 	for _, recipe := range target.Recipes {
+		result.mu.Lock()
+		if result.remainingPaths == 0 {
+			result.mu.Unlock()
+			return
+		}
+		result.mu.Unlock()
+
 		if slices.Contains(graph.BaseElements, recipe[0]) && slices.Contains(graph.BaseElements, recipe[1]) {
 			completePathSignal <- 1
+			result.mu.Lock()
+			result.elements[target.Name] = []*search.ElementNode{}
+			result.elements[target.Name] = append(result.elements[target.Name], recipe[0])
+			result.elements[target.Name] = append(result.elements[target.Name], recipe[1])
+			result.mu.Unlock()
 			<-continueSearch
 			continue // No need to generate thread for base elements
+		}
+
+		if recipe[0].Tier >= target.Tier && recipe[1].Tier >= target.Tier {
+			continue
 		}
 
 		// Decide whether to search for the parents of this element
@@ -122,43 +95,102 @@ func findPath(target *search.ElementNode, graph *search.RecipeGraph, result *Res
 		}
 
 		// Create a new thread for each parent of a recipe
-		currentPath := append([]*search.ElementNode{}, target)
-		currentPath = append([]*search.ElementNode{}, prevs...)
-		chan2 := make(chan int)
-		continueSearch1 := make(chan struct{})
-		continueSearch2 := make(chan struct{})
-		status1 := -1
-		status2 := -1
-		
-		// Let 
-		go findPath(recipe[1], graph, result, chan2, continueSearch2, currentPath)
-		while (status2 != 0 && status1 != 0) {
-			chan1 := make(chan int)
-			go findPath(recipe[0], graph, result, chan1, continueSearch1, currentPath)
-
-			status1 = <-chan1
-			status2 = <-chan2
-			if ()
-			<-continueSearch
+		currentPath := slices.Clone(prevs)
+		currentPath = append(currentPath, target)
+		searchStatus := SearchStatus{
+			chan0:           make(chan int),
+			chan1:           make(chan int),
+			continueSearch0: make(chan struct{}),
+			continueSearch1: make(chan struct{}),
 		}
 
+		// Let the first parent backtrack, then the second
+		// This is to enumerate all paths to recipe[0] x all paths to recipe[1]
+		go findPath(recipe[0], graph, result, searchStatus.chan0, searchStatus.continueSearch0, currentPath)
+		go findPath(recipe[1], graph, result, searchStatus.chan1, searchStatus.continueSearch1, currentPath)
+		status0 := <-searchStatus.chan0
+		status1 := <-searchStatus.chan1
+		for status1 != 0 {
+			result.mu.Lock()
+			stop := result.remainingPaths == 0
+			result.mu.Unlock()
 
+			if stop {
+				if status0 != 0 {
+					searchStatus.continueSearch0 <- struct{}{}
+				}
+				searchStatus.continueSearch1 <- struct{}{}
+				break // No more paths to find
+			}
 
+			if status0 == 0 { // First parent is done, so backtrack the second parent and restart the first parent thread
+				searchStatus.continueSearch1 <- struct{}{}
+				status1 = <-searchStatus.chan1
 
-		// Wait until 
+				if status1 == 0 {
+					break // Second parent is done, so no other possible path to find
+				}
+				<-continueSearch
+				searchStatus.chan0 = make(chan int)
+				go findPath(recipe[0], graph, result, searchStatus.chan0, searchStatus.continueSearch0, currentPath)
+				status0 = <-searchStatus.chan0
+			} else if status0 == 1 && status1 == 1 {
+				completePathSignal <- 1
+				result.mu.Lock()
+				result.elements[target.Name] = []*search.ElementNode{}
+				result.elements[target.Name] = append(result.elements[target.Name], recipe[0])
+				result.elements[target.Name] = append(result.elements[target.Name], recipe[1])
+				result.mu.Unlock()
 
-		<-continueSearch
-		continueSearch1 <- struct{}{}
-		continueSearch2 <- struct{}{}
+				<-continueSearch
+				searchStatus.continueSearch0 <- struct{}{}
+			}
+		}
+
+		close(searchStatus.continueSearch0)
+		close(searchStatus.continueSearch1)
+		// Kill this routine
 	}
 }
 
-
 func pathAlreadyContains(prevs []*search.ElementNode, elem *search.ElementNode) bool {
-	for _, prev := range prevs {
-		if elem == prev {
-			return true
-		} 
+	return slices.Contains(prevs, elem)
+}
+
+func ParseCraftingPath(result *ResultTree, foundPaths int) string {
+	// ResultTree is locked in the caller side
+	resultFile := "result" + fmt.Sprintf("%03d", foundPaths) + ".json"
+
+	recipies := []RecipeJSON{}
+	for elementName, recipes := range result.elements {
+		recipeEntry := RecipeJSON{
+			Element: elementName,
+			Recipe:  make([]string, 0),
+		}
+		for _, recipe := range recipes {
+			recipeEntry.Recipe = append(recipeEntry.Recipe, recipe.Name)
+		}
+		recipies = append(recipies, recipeEntry)
 	}
-	return false
+
+	jsonData, err := json.MarshalIndent(recipies, "", "  ")
+	if err != nil {
+		fmt.Println("Error marshalling JSON:", err)
+		return ""
+	}
+
+	file, err := os.Create(resultFile)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return ""
+	}
+	defer file.Close()
+
+	_, err = file.Write(jsonData)
+	if err != nil {
+		fmt.Println("Error writing to file:", err)
+		return ""
+	}
+
+	return resultFile
 }
