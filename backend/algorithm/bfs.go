@@ -72,90 +72,153 @@ type GraphJSONWithRecipes struct {
 }
 
 func ReverseBFS(target *search.ElementNode, pathNumber int) *GraphJSONWithRecipes {
-	type QueueNode struct {
-		Node *search.ElementNode
-		Step int
-	}
-
 	var nodes []JSONNode
 	var recipes []JSONRecipe
-	var queue []QueueNode
 
+	// Gunakan map untuk melacak node yang sudah dikunjungi dalam pencarian ini
+	processedNodes := make(map[int]bool)
 	nodesToInclude := make(map[int]bool)
-	localVisited := make(map[int]bool)
+	pendingNodes := make(map[int]*search.ElementNode)
 
-	queue = append(queue, QueueNode{Node: target, Step: 0})
+	// Tambahkan target ke hasil
+	nodesToInclude[target.ID] = true
+	nodes = append(nodes, JSONNode{
+		ID:   target.ID,
+		Name: target.Name,
+	})
 
-	for len(queue) > 0 {
-		curr := queue[0]
-		queue = queue[1:]
+	// Jika target bukan base element, masukkan ke pending
+	if !isBaseElement(target) {
+		pendingNodes[target.ID] = target
+	}
 
-		if localVisited[curr.Node.ID] && !isBaseElement(curr.Node) {
+	// Lakukan iterasi sampai tidak ada lagi node pending
+	// atau kita mencapai batas iterasi (untuk menghindari loop tak terbatas)
+	maxIterations := 1000
+	iteration := 0
+
+	// Kita perlu melacak step terjauh untuk setiap node
+	nodeStep := make(map[int]int)
+	nodeStep[target.ID] = 0
+
+	// Track base elements yang ditemukan
+	baseElementsFound := map[string]bool{
+		"Air":   false,
+		"Earth": false,
+		"Fire":  false,
+		"Water": false,
+	}
+
+	// Proses node pending sampai selesai
+	for len(pendingNodes) > 0 && iteration < maxIterations {
+		iteration++
+
+		// Ambil satu node dari pending
+		var currentNode *search.ElementNode
+		for _, node := range pendingNodes {
+			currentNode = node
+			delete(pendingNodes, currentNode.ID)
+			break
+		}
+
+		// Skip jika sudah diproses atau tidak valid
+		if processedNodes[currentNode.ID] || isNoRecipe(currentNode) {
+			fmt.Print(currentNode.Name)
+			fmt.Println("SKIPPED")
 			continue
 		}
-		localVisited[curr.Node.ID] = true
 
-		visited[curr.Node.ID] = true
+		// Tandai sebagai sudah diproses
+		processedNodes[currentNode.ID] = true
 
-		if isNoRecipe(curr.Node) {
-			continue
-		}
-
-		if !nodesToInclude[curr.Node.ID] {
-			nodesToInclude[curr.Node.ID] = true
-			nodes = append(nodes, JSONNode{
-				ID:   curr.Node.ID,
-				Name: curr.Node.Name,
-			})
-		}
-
-		if isBaseElement(curr.Node) {
-			continue
-		}
-
-		for _, recipe := range curr.Node.Recipes {
+		// Cari recipe yang valid
+		recipeFound := false
+		for _, recipe := range currentNode.Recipes {
+			// Validasi recipe
 			if len(recipe) != 2 || recipe[0] == nil || recipe[1] == nil {
 				continue
 			}
 
-			if recipe[0].Tier >= curr.Node.Tier || recipe[1].Tier >= curr.Node.Tier {
+			// Terapkan filter tier
+			if recipe[0].Tier >= currentNode.Tier || recipe[1].Tier >= currentNode.Tier {
 				continue
 			}
 
-			if recipe[0] != nil && recipe[1] != nil {
-				recipeKey := makeRecipeKey(recipe[0].Name, recipe[1].Name, curr.Node.Name)
-				if usedRecipes[recipeKey] {
+			// Periksa apakah recipe sudah digunakan
+			recipeKey := makeRecipeKey(recipe[0].Name, recipe[1].Name, currentNode.Name)
+			if usedRecipes[recipeKey] {
+				fmt.Print(currentNode.Name)
+				fmt.Println("SKIPPED")
+				continue
+			}
+
+			// Recipe valid! Tandai sebagai digunakan
+			recipeFound = true
+			usedRecipes[recipeKey] = true
+
+			// Tambahkan recipe ke hasil
+			recipes = append(recipes, JSONRecipe{
+				Ingredients: []string{recipe[0].Name, recipe[1].Name},
+				Result:      currentNode.Name,
+				Step:        nodeStep[currentNode.ID],
+			})
+
+			// Tandai node sebagai dikunjungi secara global
+			visited[currentNode.ID] = true
+
+			// Proses ingredient nodes
+			for _, ingredient := range recipe {
+				if ingredient == nil {
 					continue
 				}
-				usedRecipes[recipeKey] = true
-			}
 
-			// Tambahkan kedua parent ke queue
-			recipeIngredients := []string{}
-			validRecipe := true
+				// Tambahkan ke nodes jika belum ada
+				if !nodesToInclude[ingredient.ID] {
+					nodesToInclude[ingredient.ID] = true
+					nodes = append(nodes, JSONNode{
+						ID:   ingredient.ID,
+						Name: ingredient.Name,
+					})
+				}
 
-			for _, parent := range recipe {
-				if parent != nil {
-					recipeIngredients = append(recipeIngredients, parent.Name)
-					if !localVisited[parent.ID] {
-						queue = append(queue, QueueNode{
-							Node: parent,
-							Step: curr.Step + 1,
-						})
-					}
-				} else {
-					validRecipe = false
+				// Update step untuk ingredient
+				newStep := nodeStep[currentNode.ID] + 1
+				if existingStep, exists := nodeStep[ingredient.ID]; !exists || newStep > existingStep {
+					nodeStep[ingredient.ID] = newStep
+				}
+
+				// Cek apakah base element
+				if isBaseElement(ingredient) {
+					baseElementsFound[ingredient.Name] = true
+				} else if !processedNodes[ingredient.ID] {
+					// Tambahkan ke pending jika bukan base element
+					pendingNodes[ingredient.ID] = ingredient
 				}
 			}
-			if validRecipe && len(recipeIngredients) == 2 {
-				recipes = append(recipes, JSONRecipe{
-					Ingredients: recipeIngredients,
-					Result:      curr.Node.Name,
-					Step:        curr.Step,
-				})
-			}
+
+			// Hanya gunakan satu recipe valid
 			break
 		}
+
+		// Jika tidak menemukan recipe valid dan belum dikunjungi secara global,
+		// tambahkan kembali ke pending untuk coba lagi nanti
+		if !recipeFound && !visited[currentNode.ID] {
+			pendingNodes[currentNode.ID] = currentNode
+		}
+	}
+
+	// Cek apakah semua base element ditemukan
+	allBasesFound := baseElementsFound["Air"] && baseElementsFound["Earth"] &&
+		baseElementsFound["Fire"] && baseElementsFound["Water"]
+
+	if !allBasesFound {
+		fmt.Printf("Warning: Not all base elements found in path %d. Found: Air=%v, Earth=%v, Fire=%v, Water=%v\n",
+			pathNumber, baseElementsFound["Air"], baseElementsFound["Earth"],
+			baseElementsFound["Fire"], baseElementsFound["Water"])
+	}
+
+	if iteration >= maxIterations {
+		fmt.Printf("Warning: Reached max iterations (%d) for path %d\n", maxIterations, pathNumber)
 	}
 
 	return &GraphJSONWithRecipes{
