@@ -11,16 +11,57 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var visited = make(map[int]bool)
-var usedRecipes = make(map[string]bool)
+var usedElemComb = make(map[string]map[string]bool)
 
-// Fungsi untuk membuat kunci unik dari recipe
-func makeRecipeKeyWithDepth(elem1, elem2, result string, depth int) string {
-	elements := []string{elem1, elem2}
-	sort.Strings(elements)
-	return fmt.Sprintf("%s+%s=%s:%d", elements[0], elements[1], result, depth)
+type AncestryChain struct {
+	Element string
+	Parents *AncestryChain
+}
+
+func getAncSignature(chain *AncestryChain) string {
+	if chain == nil {
+		return ""
+	}
+
+	if chain.Parents == nil {
+		return chain.Element
+	}
+
+	return fmt.Sprintf("%s<-%s", chain.Element, getAncSignature(chain.Parents))
+}
+
+func isElemCombUsed(result string, elem1ID, elem2ID int, ancestryChain *AncestryChain) bool {
+	ids := []int{elem1ID, elem2ID}
+	sort.Ints(ids)
+	combKey := fmt.Sprintf("%d+%d", ids[0], ids[1])
+	ancSignature := getAncSignature(ancestryChain)
+	combMapKey := fmt.Sprintf("%s:%s", result, ancSignature)
+
+	if _, exists := usedElemComb[combMapKey]; !exists {
+		usedElemComb[combMapKey] = make(map[string]bool)
+		return false
+	}
+
+	return usedElemComb[combMapKey][combKey]
+}
+
+func markElemCombUsed(result string, elem1ID, elem2ID int, ancestryChain *AncestryChain) {
+	ids := []int{elem1ID, elem2ID}
+	sort.Ints(ids)
+	combKey := fmt.Sprintf("%d+%d", ids[0], ids[1])
+
+	ancSignature := getAncSignature(ancestryChain)
+	combMapKey := fmt.Sprintf("%s:%s", result, ancSignature)
+
+	if _, exists := usedElemComb[combMapKey]; !exists {
+		usedElemComb[combMapKey] = make(map[string]bool)
+	}
+
+	usedElemComb[combMapKey][combKey] = true
 }
 
 type JSONNode struct {
@@ -29,9 +70,10 @@ type JSONNode struct {
 }
 
 type BFSState struct {
-	Node   *search.ElementNode
-	Parent *BFSState
-	Depth  int
+	Node          *search.ElementNode
+	Parent        *BFSState
+	Depth         int
+	AncestryChain *AncestryChain
 }
 
 type JSONEdge struct {
@@ -75,89 +117,86 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) *GraphJSONWithRecipe
 	var nodes []JSONNode
 	var recipes []JSONRecipe
 
-	processedNodes := make(map[int]bool)
+	//processedNodes := make(map[int]bool)
 	nodesToInclude := make(map[int]bool)
-	pendingNodes := make(map[int]*search.ElementNode)
 
+	type QueueItem struct {
+		Node          *search.ElementNode
+		AncestryChain *AncestryChain
+		Depth         int
+	}
+
+	// Start with target node and empty ancestry
+	queue := []QueueItem{
+		{
+			Node: target,
+			AncestryChain: &AncestryChain{
+				Element: target.Name,
+				Parents: nil,
+			},
+			Depth: 0,
+		},
+	}
+
+	// Add target to results
 	nodesToInclude[target.ID] = true
 	nodes = append(nodes, JSONNode{
 		ID:   target.ID,
 		Name: target.Name,
 	})
 
-	if !isBaseElement(target) {
-		pendingNodes[target.ID] = target
-	}
+	nodeStep := make(map[int]int)
+	nodeStep[target.ID] = 0
 
 	maxIterations := 1000
 	iteration := 0
 
-	nodeStep := make(map[int]int)
-	nodeStep[target.ID] = 0
-
-	baseElementsFound := map[string]bool{
-		"Air":   false,
-		"Earth": false,
-		"Fire":  false,
-		"Water": false,
-	}
-
-	for len(pendingNodes) > 0 && iteration < maxIterations {
+	for len(queue) > 0 && iteration < maxIterations {
 		iteration++
+		current := queue[0]
+		queue = queue[1:]
 
-		var currentNode *search.ElementNode
-		for _, node := range pendingNodes {
-			currentNode = node
-			delete(pendingNodes, currentNode.ID)
-			break
-		}
-
-		if processedNodes[currentNode.ID] || isNoRecipe(currentNode) {
-			fmt.Print(currentNode.Name)
-			fmt.Println("SKIPPED PROCESSED NODES")
+		if isBaseElement(current.Node) {
+			//baseElementsFound[current.Node.Name] = true
 			continue
 		}
 
-		processedNodes[currentNode.ID] = true
+		if isNoRecipe(current.Node) {
+			continue
+		}
 
 		recipeFound := false
-		for _, recipe := range currentNode.Recipes {
+		for _, recipe := range current.Node.Recipes {
 			if len(recipe) != 2 || recipe[0] == nil || recipe[1] == nil {
 				continue
 			}
 
-			if recipe[0].Tier >= currentNode.Tier || recipe[1].Tier >= currentNode.Tier {
+			if (isNoRecipe(recipe[0]) && !isBaseElement(recipe[0])) || (isNoRecipe(recipe[1]) && !isBaseElement(recipe[1])) {
 				continue
 			}
 
-			recipeKey := makeRecipeKeyWithDepth(recipe[0].Name, recipe[1].Name, currentNode.Name, nodeStep[currentNode.ID])
-			if usedRecipes[recipeKey] {
-				fmt.Print(currentNode.Name)
-				fmt.Println("SKIPPED USED RECIPES")
+			if recipe[0].Tier >= current.Node.Tier || recipe[1].Tier >= current.Node.Tier {
 				continue
 			}
 
-			// Recipe valid! Tandai sebagai digunakan
+			if isElemCombUsed(current.Node.Name, recipe[0].ID, recipe[1].ID, current.AncestryChain) {
+				continue
+			}
+
+			markElemCombUsed(current.Node.Name, recipe[0].ID, recipe[1].ID, current.AncestryChain)
+
 			recipeFound = true
-			usedRecipes[recipeKey] = true
-
-			// Tambahkan recipe ke hasil
 			recipes = append(recipes, JSONRecipe{
 				Ingredients: []string{recipe[0].Name, recipe[1].Name},
-				Result:      currentNode.Name,
-				Step:        nodeStep[currentNode.ID],
+				Result:      current.Node.Name,
+				Step:        current.Depth,
 			})
 
-			// Tandai node sebagai dikunjungi secara global
-			//visited[currentNode.ID] = true
-
-			// Proses ingredient nodes
 			for _, ingredient := range recipe {
 				if ingredient == nil {
 					continue
 				}
 
-				// Tambahkan ke nodes jika belum ada
 				if !nodesToInclude[ingredient.ID] {
 					nodesToInclude[ingredient.ID] = true
 					nodes = append(nodes, JSONNode{
@@ -166,40 +205,27 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) *GraphJSONWithRecipe
 					})
 				}
 
-				// Update step untuk ingredient
-				newStep := nodeStep[currentNode.ID] + 1
-				if existingStep, exists := nodeStep[ingredient.ID]; !exists || newStep > existingStep {
-					nodeStep[ingredient.ID] = newStep
+				newAncestry := &AncestryChain{
+					Element: ingredient.Name,
+					Parents: current.AncestryChain,
 				}
 
-				// Cek apakah base element
-				if isBaseElement(ingredient) {
-					baseElementsFound[ingredient.Name] = true
-				} else if !processedNodes[ingredient.ID] {
-					// Tambahkan ke pending jika bukan base element
-					pendingNodes[ingredient.ID] = ingredient
+				nodeStep[ingredient.ID] = current.Depth + 1
+
+				if !isBaseElement(ingredient) {
+					queue = append(queue, QueueItem{
+						Node:          ingredient,
+						AncestryChain: newAncestry,
+						Depth:         current.Depth + 1,
+					})
 				}
 			}
-
-			// Hanya gunakan satu recipe valid
 			break
 		}
 
-		// Jika tidak menemukan recipe valid dan belum dikunjungi secara global,
-		// tambahkan kembali ke pending untuk coba lagi nanti
-		if !recipeFound && !visited[currentNode.ID] {
-			pendingNodes[currentNode.ID] = currentNode
+		if !recipeFound && !visited[current.Node.ID] {
+			queue = append(queue, current)
 		}
-	}
-
-	// Cek apakah semua base element ditemukan
-	allBasesFound := baseElementsFound["Air"] && baseElementsFound["Earth"] &&
-		baseElementsFound["Fire"] && baseElementsFound["Water"]
-
-	if !allBasesFound {
-		fmt.Printf("Warning: Not all base elements found in path %d. Found: Air=%v, Earth=%v, Fire=%v, Water=%v\n",
-			pathNumber, baseElementsFound["Air"], baseElementsFound["Earth"],
-			baseElementsFound["Fire"], baseElementsFound["Water"])
 	}
 
 	if iteration >= maxIterations {
@@ -248,19 +274,39 @@ func main() {
 		log.Fatalf("Invalid number: %v\n", inputMax)
 	}
 
-	usedRecipes = make(map[string]bool)
+	usedElemComb = make(map[string]map[string]bool)
+	pathsFound := 0
+	consecutiveFailures := 0
+	maxConsecutiveFailures := 3 // Number of empty path results before giving up
 
 	for i := 0; i < maxPaths; i++ {
 		fmt.Printf("Finding path %d...\n", i+1)
-		visited = make(map[int]bool)
-		result := ReverseBFS(target, i+1) // Selalu cari satu path per panggilan dengan nomor path
+		startTime := time.Now()
 
+		visited = make(map[int]bool)
+		result := ReverseBFS(target, i+1)
+
+		// If no recipes found in this path
 		if len(result.Recipes) == 0 {
-			fmt.Println("No more paths found.")
-			break
+			consecutiveFailures++
+			fmt.Printf("No recipes found for path %d (attempt %d of %d).\n",
+				i+1, consecutiveFailures, maxConsecutiveFailures)
+
+			// If we've had multiple failures in a row, assume no more paths exist
+			if consecutiveFailures >= maxConsecutiveFailures {
+				fmt.Printf("No more paths found after %d consecutive empty results.\n", consecutiveFailures)
+				break
+			}
+
+			// Skip saving this empty result and try again
+			continue
 		}
 
-		filename := fmt.Sprintf("graph_output_%d.json", i+1)
+		// Reset the failure counter since we found a valid path
+		consecutiveFailures = 0
+		pathsFound++
+
+		filename := fmt.Sprintf("graph_output_%d.json", pathsFound)
 		jsonBytes, err := json.MarshalIndent(result, "", "  ")
 		if err != nil {
 			log.Fatalf("Failed to marshal JSON: %v", err)
@@ -269,10 +315,31 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to write file: %v", err)
 		}
-		fmt.Printf("Saved path %d to '%s'\n", i+1, filename)
 
-		// Print debug info
+		elapsedTime := time.Since(startTime)
+		fmt.Printf("Saved path %d to '%s' (took %.2f seconds)\n",
+			pathsFound, filename, elapsedTime.Seconds())
+
 		fmt.Printf("Path %d has %d nodes and %d recipes\n",
-			i+1, len(result.Nodes), len(result.Recipes))
+			pathsFound, len(result.Nodes), len(result.Recipes))
+
+		// if len(result.Recipes) > 0 {
+		// 	fmt.Println("Cek ancestry signatures:")
+		// 	count := 0
+		// 	for key := range usedElemComb {
+		// 		if count >= 3 {
+		// 			break
+		// 		}
+		// 		fmt.Printf("  %s\n", key)
+		// 		count++
+		// 	}
+		// }
+	}
+
+	if pathsFound < maxPaths {
+		fmt.Printf("\nFound %d paths out of %d requested. No more unique paths available.\n",
+			pathsFound, maxPaths)
+	} else {
+		fmt.Printf("\nSuccessfully found all %d requested paths.\n", maxPaths)
 	}
 }
