@@ -13,7 +13,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-var scrapingResultPath string = "scraping/recipes.json"
+var scrapingResultPath string = "./recipes.json"
 
 type RecipeEntry struct {
 	Element []string              `json:"element"`

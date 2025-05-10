@@ -1,17 +1,42 @@
-package algorithm
+package main
 
 import (
+	"backend/scraping"
 	"backend/search"
+	"bufio"
+	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
 )
 
+var visited = make(map[int]bool)
+var usedRecipes = make(map[string]bool)
+
+// Fungsi untuk membuat kunci unik dari recipe
+func makeRecipeKey(elem1, elem2, result string) string {
+	elements := []string{elem1, elem2}
+	sort.Strings(elements)
+	return fmt.Sprintf("%s+%s=%s", elements[0], elements[1], result)
+}
+
 type JSONNode struct {
-	ID   int32  `json:"id"`
+	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
+type BFSState struct {
+	Node   *search.ElementNode
+	Parent *BFSState
+	Depth  int
+}
+
 type JSONEdge struct {
-	From int32 `json:"from"`
-	To   int32 `json:"to"`
+	From int `json:"from"`
+	To   int `json:"to"`
 }
 
 type GraphJSON struct {
@@ -19,7 +44,7 @@ type GraphJSON struct {
 	Edges []JSONEdge `json:"edges"`
 }
 
-func isBaseElement(node *search.ElementNode) bool {
+func isNoRecipe(node *search.ElementNode) bool {
 	for _, recipe := range node.Recipes {
 		if len(recipe) == 2 && recipe[0].Name == "" && recipe[1].Name == "" {
 			return true
@@ -28,9 +53,17 @@ func isBaseElement(node *search.ElementNode) bool {
 	return false
 }
 
+func isBaseElement(node *search.ElementNode) bool {
+	if node.Name == "Air" || node.Name == "Earth" || node.Name == "Fire" || node.Name == "Water" {
+		return true
+	}
+	return false
+}
+
 type JSONRecipe struct {
-	Ingredients []int32 `json:"ingredients"`
-	Result      int32   `json:"result"`
+	Ingredients []string `json:"ingredients"`
+	Result      string   `json:"result"`
+	Step        int      `json:"step"`
 }
 
 type GraphJSONWithRecipes struct {
@@ -38,185 +71,163 @@ type GraphJSONWithRecipes struct {
 	Recipes []JSONRecipe `json:"recipes"`
 }
 
-func ReverseBFS(target *search.ElementNode, maxPaths int) *GraphJSONWithRecipes {
-	type pathItem struct {
-		Node      *search.ElementNode
-		PathDepth int
+func ReverseBFS(target *search.ElementNode, pathNumber int) *GraphJSONWithRecipes {
+	type QueueNode struct {
+		Node *search.ElementNode
+		Step int
 	}
 
-	visited := make(map[int32]bool)
-	nodes := make(map[int32]JSONNode)
+	var nodes []JSONNode
 	var recipes []JSONRecipe
+	var queue []QueueNode
 
-	queue := []pathItem{{Node: target, PathDepth: 0}}
-	pathsUsed := 0
+	nodesToInclude := make(map[int]bool)
+	localVisited := make(map[int]bool)
 
-	for len(queue) > 0 && pathsUsed < maxPaths {
+	queue = append(queue, QueueNode{Node: target, Step: 0})
+
+	for len(queue) > 0 {
 		curr := queue[0]
 		queue = queue[1:]
 
-		if visited[curr.Node.ID] {
+		if localVisited[curr.Node.ID] && !isBaseElement(curr.Node) {
 			continue
 		}
+		localVisited[curr.Node.ID] = true
+
 		visited[curr.Node.ID] = true
-		nodes[curr.Node.ID] = JSONNode{ID: curr.Node.ID, Name: curr.Node.Name}
 
-		// Jika node ini adalah base element, langsung tambahkan resep [0, 0]
-		if isBaseElement(curr.Node) {
-			recipes = append(recipes, JSONRecipe{
-				Ingredients: []int32{0, 0},
-				Result:      curr.Node.ID,
-			})
+		if isNoRecipe(curr.Node) {
 			continue
 		}
 
-		// Cek semua resep yang dimiliki node ini
+		if !nodesToInclude[curr.Node.ID] {
+			nodesToInclude[curr.Node.ID] = true
+			nodes = append(nodes, JSONNode{
+				ID:   curr.Node.ID,
+				Name: curr.Node.Name,
+			})
+		}
+
+		if isBaseElement(curr.Node) {
+			continue
+		}
+
 		for _, recipe := range curr.Node.Recipes {
-			if pathsUsed >= maxPaths {
-				break
-			}
 			if len(recipe) != 2 || recipe[0] == nil || recipe[1] == nil {
 				continue
 			}
 
-			// Simpan resep valid
-			recipes = append(recipes, JSONRecipe{
-				Ingredients: []int32{recipe[0].ID, recipe[1].ID},
-				Result:      curr.Node.ID,
-			})
-			pathsUsed++
+			if recipe[0].Tier >= curr.Node.Tier || recipe[1].Tier >= curr.Node.Tier {
+				continue
+			}
 
-			// Tambahkan parent nodes ke antrian untuk ditelusuri
+			if recipe[0] != nil && recipe[1] != nil {
+				recipeKey := makeRecipeKey(recipe[0].Name, recipe[1].Name, curr.Node.Name)
+				if usedRecipes[recipeKey] {
+					continue
+				}
+				usedRecipes[recipeKey] = true
+			}
+
+			// Tambahkan kedua parent ke queue
+			recipeIngredients := []string{}
+			validRecipe := true
+
 			for _, parent := range recipe {
 				if parent != nil {
-					nodes[parent.ID] = JSONNode{ID: parent.ID, Name: parent.Name}
-					if !visited[parent.ID] {
-						queue = append(queue, pathItem{Node: parent, PathDepth: curr.PathDepth + 1})
+					recipeIngredients = append(recipeIngredients, parent.Name)
+					if !localVisited[parent.ID] {
+						queue = append(queue, QueueNode{
+							Node: parent,
+							Step: curr.Step + 1,
+						})
 					}
+				} else {
+					validRecipe = false
 				}
 			}
-			break // hanya satu path per node sesuai BFS
+			if validRecipe && len(recipeIngredients) == 2 {
+				recipes = append(recipes, JSONRecipe{
+					Ingredients: recipeIngredients,
+					Result:      curr.Node.Name,
+					Step:        curr.Step,
+				})
+			}
+			break
 		}
 	}
 
-	// Susun nodeList dari map
-	var nodeList []JSONNode
-	for _, node := range nodes {
-		nodeList = append(nodeList, node)
-	}
-
 	return &GraphJSONWithRecipes{
-		Nodes:   nodeList,
+		Nodes:   nodes,
 		Recipes: recipes,
 	}
 }
 
-// func PrintCraftingRecipesFromJSON(jsonData []byte, targetName string) {
-// 	var graph GraphJSON
-// 	err := json.Unmarshal(jsonData, &graph)
-// 	if err != nil {
-// 		fmt.Println("Error parsing JSON:", err)
-// 		return
-// 	}
+func main() {
+	err := scraping.ScrapeRecipes(false)
+	if err != nil {
+		log.Fatal("Error while scraping recipes:", err)
+	}
 
-// 	// Buat map ID -> Node dan Name -> ID
-// 	idToNode := make(map[int32]JSONNode)
-// 	nameToID := make(map[string]int32)
-// 	for _, node := range graph.Nodes {
-// 		idToNode[node.ID] = node
-// 		nameToID[node.Name] = node.ID
-// 	}
+	recipes, err := scraping.GetScrapedRecipesJSON()
+	if err != nil {
+		log.Fatal("Error loading recipes from JSON:", err)
+	}
 
-// 	targetID, ok := nameToID[targetName]
-// 	if !ok {
-// 		fmt.Println("Target not found in nodes:", targetName)
-// 		return
-// 	}
+	var graph search.RecipeGraph
+	err = search.ConstructRecipeGraph(recipes, &graph)
+	if err != nil {
+		log.Fatal("Error constructing recipe graph:", err)
+	}
 
-// 	// Bangun reverse map To → list of From
-// 	childToParents := make(map[int32][]int32)
-// 	for _, edge := range graph.Edges {
-// 		childToParents[edge.To] = append(childToParents[edge.To], edge.From)
-// 	}
+	reader := bufio.NewReader(os.Stdin)
 
-// 	// DFS recursive untuk kumpulkan kombinasi
-// 	var result [][]int32
-// 	var dfs func(currID int32, path []int32)
+	fmt.Print("Enter target element name: ")
+	targetName, _ := reader.ReadString('\n')
+	targetName = strings.TrimSpace(targetName)
 
-// 	dfs = func(currID int32, path []int32) {
-// 		path = append([]int32{currID}, path...)
+	target, err := search.GetElementByName(&graph, targetName)
+	if err != nil {
+		log.Fatalf("Error: element '%s' not found.\n", targetName)
+	}
 
-// 		parents, exists := childToParents[currID]
-// 		if !exists || len(parents) == 0 {
-// 			result = append(result, path)
-// 			return
-// 		}
+	fmt.Print("Enter number of paths to find: ")
+	inputMax, _ := reader.ReadString('\n')
+	inputMax = strings.TrimSpace(inputMax)
+	maxPaths, err := strconv.Atoi(inputMax)
+	if err != nil || maxPaths <= 0 {
+		log.Fatalf("Invalid number: %v\n", inputMax)
+	}
 
-// 		for _, parentID := range parents {
-// 			dfs(parentID, path)
-// 		}
-// 	}
+	// TIDAK mereset visited global agar pencarian berikutnya
+	// akan menghindari path yang sudah dikunjungi sebelumnya
 
-// 	dfs(targetID, []int32{})
+	// Bersihkan usedRecipes sebelum memulai pencarian
+	usedRecipes = make(map[string]bool)
 
-// 	// Cetak kombinasi resep
-// 	fmt.Printf("Crafting recipes to form: %s\n", targetName)
-// 	for i, recipe := range result {
-// 		fmt.Printf("Path %d: ", i+1)
-// 		for j, id := range recipe {
-// 			if j > 0 {
-// 				fmt.Print(" + ")
-// 			}
-// 			fmt.Print(idToNode[id].Name)
-// 		}
-// 		fmt.Println()
-// 	}
-// }
+	for i := 0; i < maxPaths; i++ {
+		fmt.Printf("Finding path %d...\n", i+1)
+		result := ReverseBFS(target, i+1) // Selalu cari satu path per panggilan dengan nomor path
 
-// func main() {
-// 	err := scraping.ScrapeRecipes()
-// 	if err != nil {
-// 		log.Fatal("Error while scraping recipes:", err)
-// 	}
+		if len(result.Recipes) == 0 {
+			fmt.Println("No more paths found.")
+			break
+		}
 
-// 	recipes, err := scraping.GetScrapedRecipesJSON()
-// 	if err != nil {
-// 		log.Fatal("Error loading recipes from JSON:", err)
-// 	}
+		filename := fmt.Sprintf("graph_output_%d.json", i+1)
+		jsonBytes, err := json.MarshalIndent(result, "", "  ")
+		if err != nil {
+			log.Fatalf("Failed to marshal JSON: %v", err)
+		}
+		err = os.WriteFile(filename, jsonBytes, 0644)
+		if err != nil {
+			log.Fatalf("Failed to write file: %v", err)
+		}
+		fmt.Printf("Saved path %d to '%s'\n", i+1, filename)
 
-// 	var graph search.RecipeGraph
-// 	err = search.ConstructRecipeGraph(recipes, &graph)
-// 	if err != nil {
-// 		log.Fatal("Error constructing recipe graph:", err)
-// 	}
-
-// 	fmt.Print("Enter target element name: ")
-// 	reader := bufio.NewReader(os.Stdin)
-// 	targetName, _ := reader.ReadString('\n')
-// 	targetName = strings.TrimSpace(targetName)
-// 	fmt.Print("Enter maximum number of crafting paths to show: ")
-// 	inputMax, _ := reader.ReadString('\n')
-// 	inputMax = strings.TrimSpace(inputMax)
-// 	maxPaths, err := strconv.Atoi(inputMax)
-// 	if err != nil || maxPaths <= 0 {
-// 		log.Fatalf("Invalid number: %v\n", inputMax)
-// 	}
-
-// 	target, err := search.GetElementByName(&graph, targetName)
-// 	if err != nil {
-// 		log.Fatalf("Error: element '%s' not found.\n", targetName)
-// 	}
-// 	fmt.Printf("Crafting path to: %s\n", targetName)
-// 	result := ReverseBFS(target, maxPaths)
-
-// 	jsonBytes, err := json.MarshalIndent(result, "", "  ")
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	err = os.WriteFile("graph_output.json", jsonBytes, 0644)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	// Mencetak resep crafting untuk target
-// 	//PrintCraftingRecipesFromJSON(jsonBytes, target.Name)
-// }
+		// Print debug info
+		fmt.Printf("Path %d has %d nodes and %d recipes\n",
+			i+1, len(result.Nodes), len(result.Recipes))
+	}
+}
