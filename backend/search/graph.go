@@ -10,8 +10,9 @@ import (
 // An element is created by combining two elements or nothing (primordial elements)
 // An element can be used to create other elements
 type ElementNode struct {
-	ID       int32            // Unique ID 0-720
+	ID       int              // Unique ID 0-720
 	Name     string           // Name of the element
+	Tier     int              // Tier 1-15. Base elements is tier 0
 	Children []*ElementNode   // List of elements that can be created from this element
 	Recipes  [][]*ElementNode // Parents. List of pairs of elements that can be combined to create this element
 }
@@ -27,7 +28,7 @@ func GetRoot(graph *RecipeGraph) *ElementNode          { return graph.Elements[0
 func GetChildren(element *ElementNode) []*ElementNode  { return element.Children }
 func GetRecipes(element *ElementNode) [][]*ElementNode { return element.Recipes }
 func GetName(element *ElementNode) string              { return element.Name }
-func GetID(element *ElementNode) int32                 { return element.ID }
+func GetID(element *ElementNode) int                   { return element.ID }
 
 func ConstructRecipeGraph(recipesJSON scraping.RecipeEntry, graph *RecipeGraph) error {
 	// Create a map to store the elements by name
@@ -48,10 +49,15 @@ func ConstructRecipeGraph(recipesJSON scraping.RecipeEntry, graph *RecipeGraph) 
 	// Create nodes for each element and add them to the graph
 	for i, elementName := range recipesJSON.Element {
 		node := ElementNode{
-			ID:       int32(i + 1),
+			ID:       int(i + 1),
 			Name:     elementName,
 			Children: make([]*ElementNode, 0),
 			Recipes:  make([][]*ElementNode, 0),
+		}
+		if tier, ok := recipesJSON.Tiering[elementName]; ok {
+			node.Tier = tier
+		} else {
+			node.Tier = 0 // Default tier for elements without a specified tier
 		}
 		graph.Elements[i+1] = &node
 		elementMap[elementName] = &node
