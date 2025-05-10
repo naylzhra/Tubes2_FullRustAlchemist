@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	err := scraping.ScrapeRecipes()
+	err := scraping.ScrapeRecipes(true)
 	if err != nil {
 		panic(err)
 	}
@@ -31,10 +31,11 @@ func main() {
 	}
 	fmt.Println("Total number of edges:", total_edges)
 
-	elem, err := search.GetElementByName(&graph, "Fire")
+	elem, err := search.GetElementByName(&graph, "Treasure")
 	if err == nil {
 		fmt.Println(search.GetName(elem))
 		fmt.Println("Number of children:", len(elem.Children))
 		fmt.Println("Number of recipes:", len(elem.Recipes))
+		fmt.Println("Tier:", elem.Tier)
 	}
 }
