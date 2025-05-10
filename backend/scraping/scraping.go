@@ -3,24 +3,31 @@ package scraping
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
+var scrapingResultPath string = "scraping/recipes.json"
+
 type RecipeEntry struct {
 	Element []string              `json:"element"`
 	Recipe  map[string][][]string `json:"recipe"`
+	Tiering map[string]int        `json:"tiering"`
+	Icon    map[string]string     `json:"icon"`
 }
 
-func ScrapeRecipes() error {
+func ScrapeRecipes(scrapeIcon bool) error {
+	url := "https://little-alchemy.fandom.com/wiki/Elements_(Little_Alchemy_2)"
+	icons_path := "scraping/icons/"
 	startTime := time.Now()
 
-	// URL of the page to scrape
-	url := "https://little-alchemy.fandom.com/wiki/Elements_(Little_Alchemy_2)"
+	// Scrape page
 	doc, err := getHTMLDocument(url)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -32,6 +39,8 @@ func ScrapeRecipes() error {
 	recipesJSON := RecipeEntry{
 		Element: make([]string, 0),
 		Recipe:  make(map[string][][]string),
+		Tiering: make(map[string]int),
+		Icon:    make(map[string]string),
 	}
 
 	// Scraping
@@ -57,6 +66,23 @@ func ScrapeRecipes() error {
 				element = strings.TrimSpace(element)
 				recipesJSON.Element = append(recipesJSON.Element, element)
 				recipesJSON.Recipe[element] = make([][]string, 0)
+
+				// Get icon
+				// Find image tag inside td tag
+				// Get the src attribute of the image tag
+				if scrapeIcon {
+					icon := columns.Eq(0).Find("img").AttrOr("data-src", "")
+					if icon != "" {
+						filename := icons_path + element + ".webp"
+						errIcom := downloadImage(icon, filename)
+						if errIcom != nil {
+							fmt.Println("Error downloading image:", icon)
+						} else {
+							recipesJSON.Icon[element] = filename
+						}
+					}
+				}
+
 			}
 
 		})
@@ -96,6 +122,44 @@ func ScrapeRecipes() error {
 		})
 	}
 
+	// Tiering info
+	tier_headings := doc.Find("h3")
+	tier_headings.Each(func(index int, heading *goquery.Selection) {
+		// The first span tag inside
+		spanText := heading.Find("span").Eq(0).Text()
+
+		if !strings.Contains(spanText, "Tier") {
+			return
+		}
+		parts := strings.Fields(spanText)
+		if len(parts) < 2 {
+			return
+		}
+		tier, err := strconv.Atoi(parts[1])
+		if err != nil {
+			return
+		}
+		fmt.Println("Tier:", tier)
+
+		table := heading.Next()
+		table = table.Next()
+		table.Eq(0).Find("tr").Each(func(index int, row *goquery.Selection) {
+			if index == 0 {
+				if row.Find("td").Eq(0).Text() != "Element" || row.Find("td").Eq(1).Text() != "Recipes" {
+					fmt.Println("Not a tiering table:", row.Find("td").Eq(0).Text(), row.Find("td").Eq(1).Text())
+					return
+				}
+			}
+			columns := row.Find("td")
+			element := columns.Eq(0).Text()
+			if element != "" {
+				fmt.Println("Tiering element:", element, "tier:", tier)
+				element = strings.TrimSpace(element)
+				recipesJSON.Tiering[element] = tier
+			}
+		})
+	})
+
 	// Export the recipes to JSON file
 	filename, err := exportJSON(recipesJSON)
 	if err != nil {
@@ -109,8 +173,19 @@ func ScrapeRecipes() error {
 	for _, recipes := range recipesJSON.Recipe {
 		total_recipes += len(recipes)
 	}
+	total_tiers := 0
+	tier_map := make(map[string]int)
+	for _, tier := range recipesJSON.Tiering {
+		if _, ok := tier_map[strconv.Itoa(tier)]; !ok {
+			tier_map[strconv.Itoa(tier)] = 1
+			total_tiers++
+		}
+	}
 	fmt.Println("Scraping completed. Recipes exported to ", filename)
 	fmt.Println("Number of elements:", len(recipesJSON.Element))
+	fmt.Println("Number of tiers:", total_tiers)
+	fmt.Println("Number of loaded tier of elements:", len(recipesJSON.Tiering))
+	fmt.Println("Number of icons downloaded:", len(recipesJSON.Icon))
 	fmt.Println("Number of recipes loaded:", len(recipesJSON.Recipe))
 	fmt.Println("Total number of recipes:", total_recipes)
 	fmt.Println("Elapsed time:", elapsedTime.Milliseconds(), "ms")
@@ -120,7 +195,7 @@ func ScrapeRecipes() error {
 
 func GetScrapedRecipesJSON() (RecipeEntry, error) {
 	// Read the JSON file
-	filename := "recipes.json"
+	filename := scrapingResultPath
 	file, err := os.Open(filename)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -141,7 +216,7 @@ func GetScrapedRecipesJSON() (RecipeEntry, error) {
 
 func exportJSON(recipesJSON RecipeEntry) (string, error) {
 	// Create the JSON file
-	filename := "recipes.json"
+	filename := scrapingResultPath
 	file, err := os.Create(filename)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -175,4 +250,29 @@ func getHTMLDocument(url string) (*goquery.Document, error) {
 		return nil, err
 	}
 	return doc, nil
+}
+
+func downloadImage(url string, filename string) error {
+	res, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to download image: %s", res.Status)
+	}
+
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %v", err)
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, res.Body)
+	if err != nil {
+		return fmt.Errorf("failed to save image: %v", err)
+	}
+
+	return nil
 }
