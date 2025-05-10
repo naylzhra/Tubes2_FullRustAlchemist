@@ -238,6 +238,11 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) *GraphJSONWithRecipe
 	}
 }
 
+func ResetCaches() {
+    visited = make(map[int]bool)
+    usedElemComb = make(map[string]map[string]bool)
+}
+
 func main() {
 	err := scraping.ScrapeRecipes(false)
 	if err != nil {
