@@ -29,6 +29,7 @@ func PrintCraftingPath(result *ResultTree) string {
 		fmt.Println("No crafting path found.")
 		return
 	}
+	fmt.Printf("Crafting path for %s:\n", path[0].Name)
 
 	for i := len(path) - 1; i >= 1; i -= 2 {''
 		if i-1 < 0 || i-2 < 0 {
@@ -36,9 +37,17 @@ func PrintCraftingPath(result *ResultTree) string {
 		}
 		if path[i-1].Name == "" && path[i-2].Name == "" {
 			continue
-		} else {
-			fmt.Printf("%s => %s + %s\n", path[i].Name, path[i-1].Name, path[i-2].Name)
 		}
+
+		// normal triple
+		product, ing1, ing2 := path[i], path[i+1], path[i+2]
+		sfx := func(n *search.ElementNode) string {
+			if isBaseElement(n) { return " (base)" }
+			return ""
+		}
+		fmt.Printf("%s <= %s%s + %s%s\n",
+			product.Name, ing1.Name, sfx(ing1), ing2.Name, sfx(ing2))
+		i += 3
 	}
 }
 
