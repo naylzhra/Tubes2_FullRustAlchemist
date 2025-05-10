@@ -41,9 +41,9 @@ return (
     </div>
     <div className="mt-3 flex flex-col items-center h-10">
       <div className="flex justify-center">
-        <text className="text-white text-sm">
+        <div className="text-white text-sm">
           Enter maximum number of recipes to show:
-        </text>
+        </div>
         <input
             type="text"
             value={selectedNumR}
