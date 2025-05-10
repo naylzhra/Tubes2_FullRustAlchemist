@@ -17,10 +17,10 @@ var visited = make(map[int]bool)
 var usedRecipes = make(map[string]bool)
 
 // Fungsi untuk membuat kunci unik dari recipe
-func makeRecipeKey(elem1, elem2, result string) string {
+func makeRecipeKeyWithDepth(elem1, elem2, result string, depth int) string {
 	elements := []string{elem1, elem2}
 	sort.Strings(elements)
-	return fmt.Sprintf("%s+%s=%s", elements[0], elements[1], result)
+	return fmt.Sprintf("%s+%s=%s:%d", elements[0], elements[1], result, depth)
 }
 
 type JSONNode struct {
@@ -75,33 +75,26 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) *GraphJSONWithRecipe
 	var nodes []JSONNode
 	var recipes []JSONRecipe
 
-	// Gunakan map untuk melacak node yang sudah dikunjungi dalam pencarian ini
 	processedNodes := make(map[int]bool)
 	nodesToInclude := make(map[int]bool)
 	pendingNodes := make(map[int]*search.ElementNode)
 
-	// Tambahkan target ke hasil
 	nodesToInclude[target.ID] = true
 	nodes = append(nodes, JSONNode{
 		ID:   target.ID,
 		Name: target.Name,
 	})
 
-	// Jika target bukan base element, masukkan ke pending
 	if !isBaseElement(target) {
 		pendingNodes[target.ID] = target
 	}
 
-	// Lakukan iterasi sampai tidak ada lagi node pending
-	// atau kita mencapai batas iterasi (untuk menghindari loop tak terbatas)
 	maxIterations := 1000
 	iteration := 0
 
-	// Kita perlu melacak step terjauh untuk setiap node
 	nodeStep := make(map[int]int)
 	nodeStep[target.ID] = 0
 
-	// Track base elements yang ditemukan
 	baseElementsFound := map[string]bool{
 		"Air":   false,
 		"Earth": false,
@@ -109,11 +102,9 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) *GraphJSONWithRecipe
 		"Water": false,
 	}
 
-	// Proses node pending sampai selesai
 	for len(pendingNodes) > 0 && iteration < maxIterations {
 		iteration++
 
-		// Ambil satu node dari pending
 		var currentNode *search.ElementNode
 		for _, node := range pendingNodes {
 			currentNode = node
@@ -121,34 +112,28 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) *GraphJSONWithRecipe
 			break
 		}
 
-		// Skip jika sudah diproses atau tidak valid
 		if processedNodes[currentNode.ID] || isNoRecipe(currentNode) {
 			fmt.Print(currentNode.Name)
-			fmt.Println("SKIPPED")
+			fmt.Println("SKIPPED PROCESSED NODES")
 			continue
 		}
 
-		// Tandai sebagai sudah diproses
 		processedNodes[currentNode.ID] = true
 
-		// Cari recipe yang valid
 		recipeFound := false
 		for _, recipe := range currentNode.Recipes {
-			// Validasi recipe
 			if len(recipe) != 2 || recipe[0] == nil || recipe[1] == nil {
 				continue
 			}
 
-			// Terapkan filter tier
 			if recipe[0].Tier >= currentNode.Tier || recipe[1].Tier >= currentNode.Tier {
 				continue
 			}
 
-			// Periksa apakah recipe sudah digunakan
-			recipeKey := makeRecipeKey(recipe[0].Name, recipe[1].Name, currentNode.Name)
+			recipeKey := makeRecipeKeyWithDepth(recipe[0].Name, recipe[1].Name, currentNode.Name, nodeStep[currentNode.ID])
 			if usedRecipes[recipeKey] {
 				fmt.Print(currentNode.Name)
-				fmt.Println("SKIPPED")
+				fmt.Println("SKIPPED USED RECIPES")
 				continue
 			}
 
@@ -164,7 +149,7 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) *GraphJSONWithRecipe
 			})
 
 			// Tandai node sebagai dikunjungi secara global
-			visited[currentNode.ID] = true
+			//visited[currentNode.ID] = true
 
 			// Proses ingredient nodes
 			for _, ingredient := range recipe {
@@ -263,14 +248,11 @@ func main() {
 		log.Fatalf("Invalid number: %v\n", inputMax)
 	}
 
-	// TIDAK mereset visited global agar pencarian berikutnya
-	// akan menghindari path yang sudah dikunjungi sebelumnya
-
-	// Bersihkan usedRecipes sebelum memulai pencarian
 	usedRecipes = make(map[string]bool)
 
 	for i := 0; i < maxPaths; i++ {
 		fmt.Printf("Finding path %d...\n", i+1)
+		visited = make(map[int]bool)
 		result := ReverseBFS(target, i+1) // Selalu cari satu path per panggilan dengan nomor path
 
 		if len(result.Recipes) == 0 {
