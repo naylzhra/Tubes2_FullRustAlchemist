@@ -30,7 +30,7 @@ const handleSearch = async () => {
     const data = await response.json();
     console.log(data);
     router.push(
-    `/result?element=${encodeURIComponent(searchQuery.trim())}` +
+    `/single-recipe/result?element=${encodeURIComponent(searchQuery.trim())}` +
     `&algo=${algo}`
   );
   } catch (error) {

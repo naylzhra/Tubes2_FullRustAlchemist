@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import RecipeResult from "../_components/RecipeResult";
+import RecipeResult from "../../_components/RecipeResult";
 
 type GraphData = { nodes: any[]; recipes: any[]; elapsed?: string };
 
