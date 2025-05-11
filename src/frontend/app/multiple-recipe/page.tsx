@@ -13,30 +13,53 @@ const router = useRouter();
 const [searchQuery, setSearchQuery] = useState('');
 const [selectedAlgo, setSelectedAlgo] = useState(1); // 0 = none, 1 = BFS, 2 = DFS
 const [selectedNumR, setSelectedNumR] = useState(5); //num of recipes
+const [errorMessage, setErrorMessage] = useState('');
 
 // Mock data for element grid
 const elements = Array(16).fill(null);
 
-const handleSearch = () => {
+const handleSearch = async () => {
   if (!searchQuery.trim()) {
     return;
   }
+  setErrorMessage('');
   const algo = selectedAlgo === 1 ? "bfs" : "dfs";
   console.log(`Searching for: ${searchQuery} using ${selectedAlgo === 1 ? 'BFS' : 'DFS'}`);
-  router.push(
-      `/multiple-recipe/result` +
+  
+  try {
+      const response = await fetch(`/api/recipes?element=${encodeURIComponent(searchQuery.trim())}&algo=${algo}&max=${selectedNumR}`);
+      const data = await response.json();
+      
+      if (data.error) {
+        setErrorMessage(data.message || `Error: ${data.type}`);
+        console.error("API Error:", data);
+        return;
+      }
+      
+      console.log(`Searching for: ${searchQuery} using ${algo.toUpperCase()}`);
+      router.push(
+        `/multiple-recipe/result` +
         `?element=${encodeURIComponent(searchQuery.trim())}` +
         `&algo=${algo}` +
         `&max=${selectedNumR}`
-    );
+      );
+    } catch (error) {
+      console.error("Error checking recipe:", error);
+      setErrorMessage("Failed to connect to the server. Please try again later.");
+    }
 };
 
 const handleInputQuery = (e) => {
   setSearchQuery(e.target.value);
+  setErrorMessage('');
 };
 
 const handleInputNumR = (e) => {
-  setSelectedNumR(Number(e.target.value));
+  const value = Number(e.target.value);
+  if (value > 0) {
+    setSelectedNumR(value);
+    setErrorMessage('');
+  }
 };
 
 return (
@@ -91,7 +114,12 @@ return (
         >
           Search
         </button>
-      </div>  
+      </div>
+      {errorMessage && (
+        <div className="p-1 bg-opacity-20 rounded-md text-center max-w-md">
+          <p className="text-[#B3B3B3]">{errorMessage}</p>
+        </div>
+      )}
     </div>
   </div>
   );

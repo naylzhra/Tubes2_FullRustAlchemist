@@ -78,6 +78,7 @@ func ScrapeRecipes(scrapeIcon bool) error {
 						if errIcom != nil {
 							fmt.Println("Error downloading image:", icon)
 						} else {
+							fmt.Println("Downloading image:", icon)
 							recipesJSON.Icon[element] = filename
 						}
 					}
