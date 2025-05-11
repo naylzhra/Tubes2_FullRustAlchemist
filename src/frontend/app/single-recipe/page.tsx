@@ -67,27 +67,27 @@ return (
             <select 
               value={selectedAlgo}
               onChange={(e) => setSelectedAlgo(Number(e.target.value))}
-              className="select-box flex h-full align-middle bg-[#D6BD98] text-[#1E1E1E] text-center items-center rounded-sm px-2">
+              className="select-box flex h-full align-middle bg-[#D6BD98] text-[#1E1E1E] text-center items-center rounded-lg px-2">
               <option value="1">BFS</option>
               <option value="2">DFS</option>
             </select>
           </div>
-          <div className="flex bg-[#40534C] h-full w-96 align-middle text-center text-white items-center rounded-sm">
+          <div className="flex bg-[#40534C] h-full w-96 align-middle text-center text-white items-center rounded-lg">
             <input
               type="text"
               placeholder="Which element recipe are you looking for?"
               value={searchQuery}
               onChange={handleInputChange}
-              className="w-full h-full bg-transparent text-white text-center placeholder-[#B3B3B3] px-4"
+              className="w-full h-full bg-transparent text-white text-center placeholder-[#B3B3B3] active:outline-none focus:outline-none focus:ring-2 focus:ring-[#D6BD98] focus:ring-opacity-30 rounded-lg"
             />
           </div>
           <button 
             onClick={handleSearch}
             disabled={!searchQuery.trim()}
-            className={`rounded-sm w-20 text-center ${
+            className={`rounded-lg w-20 text-center ${
               !searchQuery.trim() 
                 ? 'bg-[#d6bd9877] text-[#1E1E1E] cursor-not-allowed' 
-                : 'bg-[#D6BD98] text-[#1E1E1E] hover:text-[#40534C] hover:bg-white'
+                : 'bg-[#D6BD98] text-[#1E1E1E] hover:text-[#40534C] hover:bg-[#E3B879]'
             }`}
           >
             Search

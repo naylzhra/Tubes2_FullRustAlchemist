@@ -79,22 +79,24 @@ const Result = () => {
       </div>
     );
   }
-
+  
   if (error) {
     return (
-      <div className="flex flex-col items-center p-[2%]">
+      <div className="max-h-screen flex flex-col bg-[var(--background)]">
         <Navbar variant="single" currentRecipeMode={mode} setRecipeMode={setMode} />
-        <div className="rounded-md p-4 max-w-md w-full mb-6">
-          <p className="text-red-300 text-center">{error}</p>
+        <div className="flex flex-col items-center p-[2%]">
+          <div className="rounded-md mt-10 max-w-md w-full mb-4">
+            <p className="text-white text-center">{error}</p>
+          </div>
+          
+          <button
+            className="p-[10px] w-20 h-[44px] border
+                      border-[#d6bd98] rounded-md bg-[#d6bd98] text-[#1E1E1E]"
+            onClick={() => router.back()}
+          >
+            Back
+          </button>
         </div>
-        
-        <button
-          className="m-[10px] p-[10px] w-[199px] h-[44px] border
-                    border-[#d6bd98] rounded-[12px] bg-[#d6bd98] text-[#1E1E1E]"
-          onClick={() => router.back()}
-        >
-          Back
-        </button>
       </div>
     );
   }  

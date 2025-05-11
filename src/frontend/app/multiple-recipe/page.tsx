@@ -34,7 +34,7 @@ const handleSearch = async () => {
       
       if (data.error) {
         setErrorMessage(data.message || `Error: ${data.type}`);
-        console.error("API Error:", data);
+        // console.error("API Error:", data);
         return;
       }
       
@@ -46,7 +46,7 @@ const handleSearch = async () => {
         `&max=${selectedNumR}`
       );
     } catch (error) {
-      console.error("Error checking recipe:", error);
+      // console.error("Error checking recipe:", error);
       setErrorMessage("Failed to connect to the server. Please try again later.");
     }
 };
@@ -76,7 +76,7 @@ return (
       </div>
       <div className="mt-3 flex flex-col items-center h-10">
         <div className="flex justify-center">
-          <div className="text-white text-sm">
+          <div className="text-[#F3F3F3] text-sm">
             Enter maximum number of recipes to show:
           </div>
           <input
@@ -88,32 +88,32 @@ return (
         </div>
       </div>
       <div className="flex flex-col items-center">
-        <div className="flex justify-center h-10 space-x-3 gap-3 mb-3">
+        <div className="flex justify-center h-10 space-x-3 mb-3">
           <div className="flex items-center">
             <select 
               value={selectedAlgo}
               onChange={(e) => setSelectedAlgo(Number(e.target.value))}
-              className="select-box flex h-full align-middle bg-[#D6BD98] text-[#1E1E1E] text-center items-center rounded-sm px-3 py-1">
+              className="select-box flex h-full align-middle bg-[#D6BD98] text-[#1E1E1E] text-center items-center rounded-lg px-3 py-1">
               <option value="1">BFS</option>
               <option value="2">DFS</option>
             </select>
           </div>
-          <div className="flex bg-[#40534C] h-full w-96 align-middle text-center text-white items-center rounded-sm px-2">
+          <div className="flex bg-[#40534C] h-full w-96 align-middle text-center text-white items-center rounded-lg">
             <input
               type="text"
               placeholder="Which element recipe are you looking for?"
               value={searchQuery}
               onChange={handleInputQuery}
-              className="w-full h-full bg-transparent text-center text-white placeholder-[#B3B3B3] px-4"
+              className="w-full h-full bg-transparent text-center text-white placeholder-[#B3B3B3] active:outline-none focus:outline-none focus:ring-2 focus:ring-[#D6BD98] focus:ring-opacity-30 rounded-lg"
             />
           </div>
           <button 
             onClick={handleSearch}
             disabled={!searchQuery.trim()}
-            className={`rounded-sm w-20 text-centeritems-center ${
-              !searchQuery.trim() 
-                ? 'bg-[#d6bd9877] text-[#1E1E1E] cursor-not-allowed' 
-                : 'bg-[#D6BD98] text-[#1E1E1E] hover:text-[#40534C] hover:bg-white'
+            className={`rounded-lg w-20 text-center items-center ${
+              !searchQuery.trim()
+                ? 'bg-[#d6bd9877] text-[#1E1E1E] cursor-not-allowed'
+                : 'bg-[#D6BD98] text-[#1E1E1E] hover:bg-[#E3B879]'
             }`}
           >
             Search

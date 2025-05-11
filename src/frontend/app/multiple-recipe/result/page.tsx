@@ -80,30 +80,33 @@ const MultiResult = () => {
   
   if (error) {
     return (
-      <div className="flex flex-col items-center p-[2%]">
+      <div className="max-h-screen flex flex-col bg-[var(--background)]">
         <Navbar variant="multiple" currentRecipeMode={mode} setRecipeMode={setMode} />
-        <p className="text-white text-center mb-6">{error}</p>
-        <button className="px-6 py-2 bg-[#d6bd98] rounded text-[#1e1e1e]"
-                onClick={() => router.back()}>
-          Go Back
-        </button>
+        <div className="flex flex-col items-center p-[2%]">
+          <p className="text-white mt-10 text-center mb-6">{error}</p>
+          <button className="px-6 py-2 bg-[#d6bd98] rounded-md text-[#1e1e1e]"
+                  onClick={() => router.back()}>
+            Back
+          </button>
+        </div>
       </div>
     );
   }
   
-  
   if (paths.length === 0) {
     return (
-      <div className="min-h-screen text-white p-8 flex flex-col items-center">
+      <div className="max-h-screen flex flex-col bg-[var(--background)]">
         <Navbar variant="multiple" currentRecipeMode={mode} setRecipeMode={setMode} />
-        <h2 className="text-3xl font-semibold mb-4">
-          No recipes found for <span className="text-[#d6bd98]">{element}</span>
-        </h2>
-        <p className="text-amber-300 mb-6">Try a different element or algorithm.</p>
-        <button className="px-6 py-2 bg-[#d6bd98] rounded text-[#1e1e1e]"
-                onClick={() => router.back()}>
-          Back
-        </button>
+        <div className="text-white p-8 flex flex-col items-center">
+          <h2 className="text-3xl font-semibold mb-4">
+            No recipes found for <span className="text-[#d6bd98]">{element}</span>
+          </h2>
+          <p className="text-gray-400 mb-6">Try a different element or algorithm.</p>
+          <button className="px-6 py-2 bg-[#d6bd98] rounded text-[#1e1e1e] transition duration-200 hover:scale-105"
+                  onClick={() => router.back()}>
+            Back
+          </button>
+        </div>
       </div>
     );
   }
