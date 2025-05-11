@@ -30,10 +30,10 @@ type RecipeJSON struct {
 	Recipe  []string `json:"recipe"`
 }
 
-func DFS(target *search.ElementNode, graph *search.RecipeGraph, maxPaths int) []string {
+func DFS(target *search.ElementNode, graph *search.RecipeGraph, maxPaths int, nodeVisited *int) []string {
 	if maxPaths == 1 {
 		result := &ResultTree{path: make([]*Recipe, 0)}
-		findSinglePath(target, graph, result)
+		findSinglePath(target, graph, result, nodeVisited)
 
 		return []string{ParseCraftingPath(result, 1, graph)}
 	}
@@ -45,8 +45,9 @@ func DFS(target *search.ElementNode, graph *search.RecipeGraph, maxPaths int) []
 
 /* ----------------------------------------- Single Recipe DFS ----------------------------------------------- */
 
-func findSinglePath(target *search.ElementNode, graph *search.RecipeGraph, result *ResultTree) *Recipe {
-	fmt.Println("Searching for:", target.Name)
+func findSinglePath(target *search.ElementNode, graph *search.RecipeGraph, result *ResultTree, nodeVisited *int) *Recipe {
+	*nodeVisited++
+
 	if slices.Contains(graph.BaseElements, target) {
 		*result = ResultTree{path: make([]*Recipe, 0)}
 		baseElem := &Recipe{element: target}
@@ -65,12 +66,12 @@ func findSinglePath(target *search.ElementNode, graph *search.RecipeGraph, resul
 		}
 
 		result0 := &ResultTree{path: make([]*Recipe, 0)}
-		component0 := findSinglePath(recipe[0], graph, result0)
+		component0 := findSinglePath(recipe[0], graph, result0, nodeVisited)
 		if component0 == nil {
 			continue
 		}
 		result1 := &ResultTree{path: make([]*Recipe, 0)}
-		component1 := findSinglePath(recipe[1], graph, result1)
+		component1 := findSinglePath(recipe[1], graph, result1, nodeVisited)
 		if component1 == nil {
 			continue
 		}

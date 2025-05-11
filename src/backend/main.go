@@ -27,10 +27,6 @@ func main() {
 		panic(err)
 	}
 
-	// target, err := search.GetElementByName(&graph, "Picnic")
-	// if err == nil {
-	// 	algorithm.DFS(target, &graph, 1)
-	// }
 	r := gin.Default()
 	r.SetTrustedProxies([]string{"127.0.0.1"})
 	r.Use(cors.New(cors.Config{
