@@ -1,5 +1,6 @@
 "use client";
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Josefin_Sans } from 'next/font/google';
 
 const josefinSans = Josefin_Sans({
@@ -8,6 +9,7 @@ const josefinSans = Josefin_Sans({
 });
 
 const MultipleRecipePage = () => {
+const router = useRouter();
 const [searchQuery, setSearchQuery] = useState('');
 const [selectedAlgo, setSelectedAlgo] = useState(1); // 0 = none, 1 = BFS, 2 = DFS
 const [selectedNumR, setSelectedNumR] = useState(5); //num of recipes
@@ -19,8 +21,14 @@ const handleSearch = () => {
   if (!searchQuery.trim()) {
     return;
   }
+  const algo = selectedAlgo === 1 ? "bfs" : "dfs";
   console.log(`Searching for: ${searchQuery} using ${selectedAlgo === 1 ? 'BFS' : 'DFS'}`);
-  // Implement actual search functionality here
+  router.push(
+      `/multiple-recipe/result` +
+        `?element=${encodeURIComponent(searchQuery.trim())}` +
+        `&algo=${algo}` +
+        `&max=${selectedNumR}`
+    );
 };
 
 const handleInputQuery = (e) => {
