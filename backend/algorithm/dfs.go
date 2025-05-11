@@ -29,8 +29,8 @@ type RecipeJSON struct {
 
 func DFS(target *search.ElementNode, graph *search.RecipeGraph, maxPaths int) []string {
 	foundPaths := 0
-	completePathSignal := make(chan int)
-	continueSearch := make(chan struct{})
+	completePathSignal := make(chan int, 1)
+	continueSearch := make(chan struct{}, 1)
 	result := ResultTree{
 		mu:             sync.Mutex{},
 		elements:       make(map[string][]*search.ElementNode),
@@ -54,6 +54,7 @@ func DFS(target *search.ElementNode, graph *search.RecipeGraph, maxPaths int) []
 			continueSearch <- struct{}{}
 		}
 	}
+	close(continueSearch)
 
 	return resultJSONs
 }
@@ -63,6 +64,14 @@ func findPath(target *search.ElementNode, graph *search.RecipeGraph, result *Res
 		completePathSignal <- 0
 		close(completePathSignal)
 	}()
+
+	// Base case: if the target is a base element, return
+	if slices.Contains(graph.BaseElements, target) {
+		completePathSignal <- 1
+		return
+	}
+
+	fmt.Println("Searching for:", target.Name)
 
 	// Generate thread for the two parents for a recipe (if not already created)
 	// Wait until the recipe is fully complete before checking another recipe of this node
@@ -85,7 +94,7 @@ func findPath(target *search.ElementNode, graph *search.RecipeGraph, result *Res
 			continue // No need to generate thread for base elements
 		}
 
-		if recipe[0].Tier >= target.Tier && recipe[1].Tier >= target.Tier {
+		if recipe[0].Tier >= target.Tier || recipe[1].Tier >= target.Tier {
 			continue
 		}
 
@@ -98,10 +107,10 @@ func findPath(target *search.ElementNode, graph *search.RecipeGraph, result *Res
 		currentPath := slices.Clone(prevs)
 		currentPath = append(currentPath, target)
 		searchStatus := SearchStatus{
-			chan0:           make(chan int),
-			chan1:           make(chan int),
-			continueSearch0: make(chan struct{}),
-			continueSearch1: make(chan struct{}),
+			chan0:           make(chan int, 1),
+			chan1:           make(chan int, 1),
+			continueSearch0: make(chan struct{}, 1),
+			continueSearch1: make(chan struct{}, 1),
 		}
 
 		// Let the first parent backtrack, then the second
