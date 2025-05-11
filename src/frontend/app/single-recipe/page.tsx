@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Josefin_Sans } from 'next/font/google';
 import ScrollingElements from '../_components/ScrollingElements';
+import Navbar from '../_components/Navbar';
 
 const josefinSans = Josefin_Sans({
   subsets: ['latin'],
@@ -14,6 +15,7 @@ const SingleRecipePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAlgo, setSelectedAlgo] = useState(1); // 0 = none, 1 = BFS, 2 = DFS
   const [errorMessage, setErrorMessage] = useState('');
+  const [mode, setMode] = useState(1);
   // Mock data for element grid
   const elements = Array(16).fill(null);
 
@@ -43,58 +45,62 @@ const SingleRecipePage = () => {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setSearchQuery(e.target.value);
     setErrorMessage('');
   };
+  
 
 return (
-  <div className="min-h-screen text-white p-8 overflow-y-hidden">
-    {/* Title */}
-    <div className="mt-4 text-center items-center">
-      <h1 className={`text-6xl font-bold text-white ${josefinSans.className}`}>
-        Little <span className="bg-gradient-to-br from-purple-[#798772] to-[#D6BD98] bg-clip-text text-transparent">Alchemy</span> Recipe
-      </h1>
-    </div>
-    <div className="mt-10 flex flex-col items-center mb-10">
-      <div className="flex justify-center h-10 space-x-3">
-        <div className="flex items-center">
-          <select 
-            value={selectedAlgo}
-            onChange={(e) => setSelectedAlgo(Number(e.target.value))}
-            className="select-box flex h-full align-middle bg-[#D6BD98] text-[#1E1E1E] text-center items-center rounded-sm px-2">
-            <option value="1">BFS</option>
-            <option value="2">DFS</option>
-          </select>
-        </div>
-        <div className="flex bg-[#40534C] h-full w-96 align-middle text-center text-white items-center rounded-sm">
-          <input
-            type="text"
-            placeholder="Which element recipe are you looking for?"
-            value={searchQuery}
-            onChange={handleInputChange}
-            className="w-full h-full bg-transparent text-white text-center placeholder-[#B3B3B3] px-4"
-          />
-        </div>
-        <button 
-          onClick={handleSearch}
-          disabled={!searchQuery.trim()}
-          className={`rounded-sm w-20 ${
-            !searchQuery.trim() 
-              ? 'bg-[#d6bd9877] text-[#1E1E1E] cursor-not-allowed' 
-              : 'bg-[#D6BD98] text-[#1E1E1E] hover:bg-amber-300'
-          }`}
-        >
-          Search
-        </button>
+  <div className="max-h-screen flex flex-col bg-[var(--background)]">
+    <Navbar variant="single" currentRecipeMode={mode} setRecipeMode={setMode} />
+    <div className="p-8 overflow-y-hidden">
+      {/* Title */}
+      <div className="mt-4 text-center items-center">
+        <h1 className={`text-6xl font-bold text-white ${josefinSans.className}`}>
+          Little <span className="bg-gradient-to-br from-purple-[#798772] to-[#D6BD98] bg-clip-text text-transparent">Alchemy</span> Recipe
+        </h1>
       </div>
-      {errorMessage && (
-        <div className="p-1 bg-opacity-20 rounded-md text-center max-w-md">
-          <p className="text-[#B3B3B3]">{errorMessage}</p>
+      <div className="mt-10 flex flex-col items-center mb-10">
+        <div className="flex justify-center h-10 space-x-3">
+          <div className="flex items-center">
+            <select 
+              value={selectedAlgo}
+              onChange={(e) => setSelectedAlgo(Number(e.target.value))}
+              className="select-box flex h-full align-middle bg-[#D6BD98] text-[#1E1E1E] text-center items-center rounded-sm px-2">
+              <option value="1">BFS</option>
+              <option value="2">DFS</option>
+            </select>
+          </div>
+          <div className="flex bg-[#40534C] h-full w-96 align-middle text-center text-white items-center rounded-sm">
+            <input
+              type="text"
+              placeholder="Which element recipe are you looking for?"
+              value={searchQuery}
+              onChange={handleInputChange}
+              className="w-full h-full bg-transparent text-white text-center placeholder-[#B3B3B3] px-4"
+            />
+          </div>
+          <button 
+            onClick={handleSearch}
+            disabled={!searchQuery.trim()}
+            className={`rounded-sm w-20 text-center ${
+              !searchQuery.trim() 
+                ? 'bg-[#d6bd9877] text-[#1E1E1E] cursor-not-allowed' 
+                : 'bg-[#D6BD98] text-[#1E1E1E] hover:bg-amber-300'
+            }`}
+          >
+            Search
+          </button>
         </div>
-      )}
+        {errorMessage && (
+          <div className="p-1 bg-opacity-20 rounded-md text-center max-w-md">
+            <p className="text-[#B3B3B3]">{errorMessage}</p>
+          </div>
+        )}
+      </div>
+      <ScrollingElements />
     </div>
-    <ScrollingElements />
   </div>
   );
 } 

@@ -2,6 +2,7 @@
 import { Josefin_Sans } from "next/font/google";
 import { useRouter } from "next/navigation";
 import Footer from "./_components/Footer";
+import Navbar from "./_components/Navbar";
 
 const josefinSans = Josefin_Sans({
   subsets: ["latin"],
@@ -12,6 +13,7 @@ const LandingPage = () => {
   const Router = useRouter();
   return (
     <div className="max-h-screen flex flex-col bg-[var(--background)] overflow-y-hidden">
+      <Navbar variant="home" />
       {/* Konten Utama */}
       <div className="flex flex-1 items-center justify-center gap-[15vw] px-[8vw] my-[12.25vh]">
         {/* Kiri: Teks dan Tombol */}

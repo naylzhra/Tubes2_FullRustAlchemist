@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import RecipeResult from "../../_components/RecipeResult";
+import Navbar from "../../_components/Navbar";
 
 type ErrorResponse = {
   error: true;
@@ -23,7 +24,8 @@ const Result = () => {
   const router = useRouter();
   const element = params.get("element") || "";
   const algo    = params.get("algo")?.toLowerCase()    || "bfs";
-
+  
+  const [mode, setMode] = useState(1);
   const [data, setData]   = useState<GraphData | null>(null);
   const [error, setError] = useState<string | null>('error test');
   const [isLoading, setIsLoading] = useState(true);
@@ -76,7 +78,8 @@ const Result = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center p-[2%]">
-        <div className="bg-red-500 bg-opacity-20 border border-red-500 rounded-md p-4 max-w-md w-full mb-6">
+        <Navbar variant="single" currentRecipeMode={mode} setRecipeMode={setMode} />
+        <div className="rounded-md p-4 max-w-md w-full mb-6">
           <p className="text-red-300 text-center">{error}</p>
         </div>
         
@@ -92,26 +95,29 @@ const Result = () => {
   }  
   
   return (
-    <div className="flex flex-col items-center p-[2%]">
-      <p className="w-[510px] h-[58px] m-[5px] p-4 border
-                   border-[var(--foreground)] bg-[var(--foreground)]
-                   rounded-[12px] text-white text-center">
-        {element}
-      </p>
-      <div className="flex justify-between w-[510px] text-[#b3b3b3] m-[5px]">
-        <p>Time execution: {data.elapsed} ms</p>
-        <p>Visited nodes: {data.nodes.length}</p>
+    <div className="max-h-screen flex flex-col bg-[var(--background)]">
+      <Navbar variant="single" currentRecipeMode={mode} setRecipeMode={setMode} />
+      <div className="flex flex-col items-center p-[2%]">
+        <p className="w-[510px] h-[58px] m-[5px] p-4 border
+                    border-[var(--foreground)] bg-[var(--foreground)]
+                    rounded-[12px] text-white text-center">
+          {element}
+        </p>
+        <div className="flex justify-between w-[510px] text-[#b3b3b3] m-[5px]">
+          <p>Time execution: {data.elapsed} ms</p>
+          <p>Visited nodes: {data.nodes.length}</p>
+        </div>
+
+        <RecipeResult graph={data} />
+
+        <button
+          className="m-[10px] p-[10px] w-[199px] h-[44px] border
+                    border-[#d6bd98] rounded-[12px] bg-[#d6bd98]"
+          onClick={() => router.back()}
+        >
+          Back
+        </button>
       </div>
-
-      <RecipeResult graph={data} />
-
-      <button
-        className="m-[10px] p-[10px] w-[199px] h-[44px] border
-                   border-[#d6bd98] rounded-[12px] bg-[#d6bd98]"
-        onClick={() => router.back()}
-      >
-        Back
-      </button>
     </div>
   );
 }
