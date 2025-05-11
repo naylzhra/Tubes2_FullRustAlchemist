@@ -5,6 +5,7 @@ import (
 	"backend/scraping"
 	"backend/search"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -42,7 +43,6 @@ func main() {
 		element := c.Query("element")
 		algo := strings.ToLower(c.DefaultQuery("algo", "bfs"))
 
-
 		if element == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error":   true,
@@ -65,14 +65,18 @@ func main() {
 
 		switch algo {
 		case "bfs":
-			result := algorithm.ReverseBFS(node, 1)
-
+			result, visitedCount := algorithm.ReverseBFS(node, 1)
+			log.Printf("Jumlah node yang dikunjungi: %d\n", visitedCount)
 			c.JSON(http.StatusOK, gin.H{
 				"error": false,
-				"data":  result,
+				"data": gin.H{
+					"nodes":        result.Nodes,
+					"recipes":      result.Recipes,
+					"visitedNodes": visitedCount,
+				},
 			})
 		case "dfs":
-			result := algorithm.DFS(node, &graph, 1)
+			result := algorithm.DFS(node, &graph, 1, nil) // sementara ya yang nil
 			c.JSON(http.StatusOK, result)
 		default:
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -86,7 +90,6 @@ func main() {
 	r.GET("/api/recipes", func(c *gin.Context) {
 		element := c.Query("element")
 		algo := strings.ToLower(c.DefaultQuery("algo", "bfs"))
-
 
 		if element == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -121,23 +124,25 @@ func main() {
 		paths := make([]*algorithm.GraphJSONWithRecipes, 0, max)
 		algorithm.ResetCaches()
 
-
-		var p *algorithm.GraphJSONWithRecipes
+		//var p *algorithm.GraphJSONWithRecipes
 		switch algo {
 		case "bfs":
+			totalVisited := 0
 			for i := 0; i < max; i++ {
-				p = algorithm.ReverseBFS(node, i+1)
-				if len(p.Recipes) == 0 { // no more unique paths
+				p, visitedCount := algorithm.ReverseBFS(node, i+1)
+				if len(p.Recipes) == 0 {
 					break
 				}
 				paths = append(paths, p)
+				totalVisited += visitedCount
 			}
 			c.JSON(http.StatusOK, gin.H{
 				"error": false,
 				"data": gin.H{
-					"element": element,
-					"algo":    algo,
-					"paths":   paths,
+					"element":      element,
+					"algo":         algo,
+					"paths":        paths,
+					"visitedNodes": totalVisited,
 				},
 			})
 		// case "dfs":

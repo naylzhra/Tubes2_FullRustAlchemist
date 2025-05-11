@@ -4,11 +4,13 @@ import * as d3 from "d3";
 
 export type GraphNode = { id: number; name: string };
 export type GraphRecipe = { ingredients: string[]; result: string; step: number };
-export interface GraphData {
-  nodes: GraphNode[];
-  recipes: GraphRecipe[];
-  elapsed?: string;
-}
+type GraphData = { 
+  nodes: any[]; 
+  recipes: any[]; 
+  elapsed?: string; 
+  visitedNodes?: number;
+};
+
 
 interface RecipeResultProps {
   graph: GraphData;
@@ -220,12 +222,12 @@ const RecipeResult: React.FC<RecipeResultProps> = ({ graph }) => {
       <div className="border rounded p-4 w-full">
         <h3 className="font-semibold mb-2">Recipe steps</h3>
         <ul className="text-sm list-disc pl-5 space-y-1">
-          {graph.recipes.map((r, i) => (
-            <li key={i}>
-              <span className="text-[#D6BD98]">{r.ingredients.join(" + ")}</span>{" "}
-              ➜ <span className="font-medium">{r.result}</span>
-            </li>
-          ))}
+          {graph.recipes && graph.recipes.length > 0 && graph.recipes.map((r, i) => (
+          <li key={i}>
+            <span className="text-[#D6BD98]">{r.ingredients.join(" + ")}</span>{" "}
+            ➜ <span className="font-medium">{r.result}</span>
+          </li>
+        ))}
         </ul>
       </div>
 

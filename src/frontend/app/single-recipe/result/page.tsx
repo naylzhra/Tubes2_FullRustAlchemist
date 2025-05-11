@@ -16,7 +16,12 @@ type SuccessResponse = {
 
 type ApiResponse = ErrorResponse | SuccessResponse;
 
-type GraphData = { nodes: any[]; recipes: any[]; elapsed?: string };
+type GraphData = { 
+  nodes: any[]; 
+  recipes: any[]; 
+  elapsed?: string; 
+  visitedNodes?: number;
+};
 
 const Result = () => {
   const params = useSearchParams();
@@ -100,7 +105,7 @@ const Result = () => {
       </p>
       <div className="flex justify-between w-[510px] text-[#b3b3b3] m-[5px]">
         <p>Time execution: {data.elapsed} ms</p>
-        <p>Visited nodes: {data.nodes.length}</p>
+        <p>Visited nodes: {data?.visitedNodes}</p>
       </div>
 
       <RecipeResult graph={data} />

@@ -1,17 +1,9 @@
 package algorithm
 
 import (
-	"backend/scraping"
 	"backend/search"
-	"bufio"
-	"encoding/json"
 	"fmt"
-	"log"
-	"os"
 	"sort"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var visited = make(map[int]bool)
@@ -113,7 +105,13 @@ type GraphJSONWithRecipes struct {
 	Recipes []JSONRecipe `json:"recipes"`
 }
 
-func ReverseBFS(target *search.ElementNode, pathNumber int) *GraphJSONWithRecipes {
+func ReverseBFS(target *search.ElementNode, pathNumber int) (*GraphJSONWithRecipes, int) {
+	visitedNodes := 0
+
+	if isBaseElement(target) {
+		return nil, 0
+	}
+
 	var nodes []JSONNode
 	var recipes []JSONRecipe
 
@@ -153,6 +151,7 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) *GraphJSONWithRecipe
 
 	for len(queue) > 0 && iteration < maxIterations {
 		iteration++
+		visitedNodes++
 		current := queue[0]
 		queue = queue[1:]
 
@@ -218,6 +217,8 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) *GraphJSONWithRecipe
 						AncestryChain: newAncestry,
 						Depth:         current.Depth + 1,
 					})
+				} else {
+					visitedNodes++
 				}
 			}
 			break
@@ -235,116 +236,116 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) *GraphJSONWithRecipe
 	return &GraphJSONWithRecipes{
 		Nodes:   nodes,
 		Recipes: recipes,
-	}
+	}, visitedNodes
 }
 
 func ResetCaches() {
-    visited = make(map[int]bool)
-    usedElemComb = make(map[string]map[string]bool)
-}
-
-func main() {
-	err := scraping.ScrapeRecipes(false)
-	if err != nil {
-		log.Fatal("Error while scraping recipes:", err)
-	}
-
-	recipes, err := scraping.GetScrapedRecipesJSON()
-	if err != nil {
-		log.Fatal("Error loading recipes from JSON:", err)
-	}
-
-	var graph search.RecipeGraph
-	err = search.ConstructRecipeGraph(recipes, &graph)
-	if err != nil {
-		log.Fatal("Error constructing recipe graph:", err)
-	}
-
-	reader := bufio.NewReader(os.Stdin)
-
-	fmt.Print("Enter target element name: ")
-	targetName, _ := reader.ReadString('\n')
-	targetName = strings.TrimSpace(targetName)
-
-	target, err := search.GetElementByName(&graph, targetName)
-	if err != nil {
-		log.Fatalf("Error: element '%s' not found.\n", targetName)
-	}
-
-	fmt.Print("Enter number of paths to find: ")
-	inputMax, _ := reader.ReadString('\n')
-	inputMax = strings.TrimSpace(inputMax)
-	maxPaths, err := strconv.Atoi(inputMax)
-	if err != nil || maxPaths <= 0 {
-		log.Fatalf("Invalid number: %v\n", inputMax)
-	}
-
+	visited = make(map[int]bool)
 	usedElemComb = make(map[string]map[string]bool)
-	pathsFound := 0
-	consecutiveFailures := 0
-	maxConsecutiveFailures := 3 // Number of empty path results before giving up
-
-	for i := 0; i < maxPaths; i++ {
-		fmt.Printf("Finding path %d...\n", i+1)
-		startTime := time.Now()
-
-		visited = make(map[int]bool)
-		result := ReverseBFS(target, i+1)
-
-		// If no recipes found in this path
-		if len(result.Recipes) == 0 {
-			consecutiveFailures++
-			fmt.Printf("No recipes found for path %d (attempt %d of %d).\n",
-				i+1, consecutiveFailures, maxConsecutiveFailures)
-
-			// If we've had multiple failures in a row, assume no more paths exist
-			if consecutiveFailures >= maxConsecutiveFailures {
-				fmt.Printf("No more paths found after %d consecutive empty results.\n", consecutiveFailures)
-				break
-			}
-
-			// Skip saving this empty result and try again
-			continue
-		}
-
-		// Reset the failure counter since we found a valid path
-		consecutiveFailures = 0
-		pathsFound++
-
-		filename := fmt.Sprintf("graph_output_%d.json", pathsFound)
-		jsonBytes, err := json.MarshalIndent(result, "", "  ")
-		if err != nil {
-			log.Fatalf("Failed to marshal JSON: %v", err)
-		}
-		err = os.WriteFile(filename, jsonBytes, 0644)
-		if err != nil {
-			log.Fatalf("Failed to write file: %v", err)
-		}
-
-		elapsedTime := time.Since(startTime)
-		fmt.Printf("Saved path %d to '%s' (took %.2f seconds)\n",
-			pathsFound, filename, elapsedTime.Seconds())
-
-		fmt.Printf("Path %d has %d nodes and %d recipes\n",
-			pathsFound, len(result.Nodes), len(result.Recipes))
-
-		// if len(result.Recipes) > 0 {
-		// 	fmt.Println("Cek ancestry signatures:")
-		// 	count := 0
-		// 	for key := range usedElemComb {
-		// 		if count >= 3 {
-		// 			break
-		// 		}
-		// 		fmt.Printf("  %s\n", key)
-		// 		count++
-		// 	}
-		// }
-	}
-
-	if pathsFound < maxPaths {
-		fmt.Printf("\nFound %d paths out of %d requested. No more unique paths available.\n",
-			pathsFound, maxPaths)
-	} else {
-		fmt.Printf("\nSuccessfully found all %d requested paths.\n", maxPaths)
-	}
 }
+
+// func main() {
+// 	err := scraping.ScrapeRecipes(false)
+// 	if err != nil {
+// 		log.Fatal("Error while scraping recipes:", err)
+// 	}
+
+// 	recipes, err := scraping.GetScrapedRecipesJSON()
+// 	if err != nil {
+// 		log.Fatal("Error loading recipes from JSON:", err)
+// 	}
+
+// 	var graph search.RecipeGraph
+// 	err = search.ConstructRecipeGraph(recipes, &graph)
+// 	if err != nil {
+// 		log.Fatal("Error constructing recipe graph:", err)
+// 	}
+
+// 	reader := bufio.NewReader(os.Stdin)
+
+// 	fmt.Print("Enter target element name: ")
+// 	targetName, _ := reader.ReadString('\n')
+// 	targetName = strings.TrimSpace(targetName)
+
+// 	target, err := search.GetElementByName(&graph, targetName)
+// 	if err != nil {
+// 		log.Fatalf("Error: element '%s' not found.\n", targetName)
+// 	}
+
+// 	fmt.Print("Enter number of paths to find: ")
+// 	inputMax, _ := reader.ReadString('\n')
+// 	inputMax = strings.TrimSpace(inputMax)
+// 	maxPaths, err := strconv.Atoi(inputMax)
+// 	if err != nil || maxPaths <= 0 {
+// 		log.Fatalf("Invalid number: %v\n", inputMax)
+// 	}
+
+// 	usedElemComb = make(map[string]map[string]bool)
+// 	pathsFound := 0
+// 	consecutiveFailures := 0
+// 	maxConsecutiveFailures := 3 // Number of empty path results before giving up
+
+// 	for i := 0; i < maxPaths; i++ {
+// 		fmt.Printf("Finding path %d...\n", i+1)
+// 		startTime := time.Now()
+
+// 		visited = make(map[int]bool)
+// 		result, tmp := ReverseBFS(target, i+1)
+
+// 		// If no recipes found in this path
+// 		if len(result.Recipes) == 0 {
+// 			consecutiveFailures++
+// 			fmt.Printf("No recipes found for path %d (attempt %d of %d).\n",
+// 				i+1, consecutiveFailures, maxConsecutiveFailures)
+
+// 			// If we've had multiple failures in a row, assume no more paths exist
+// 			if consecutiveFailures >= maxConsecutiveFailures {
+// 				fmt.Printf("No more paths found after %d consecutive empty results.\n", consecutiveFailures)
+// 				break
+// 			}
+
+// 			// Skip saving this empty result and try again
+// 			continue
+// 		}
+
+// 		// Reset the failure counter since we found a valid path
+// 		consecutiveFailures = 0
+// 		pathsFound++
+
+// 		filename := fmt.Sprintf("graph_output_%d.json", pathsFound)
+// 		jsonBytes, err := json.MarshalIndent(result, "", "  ")
+// 		if err != nil {
+// 			log.Fatalf("Failed to marshal JSON: %v", err)
+// 		}
+// 		err = os.WriteFile(filename, jsonBytes, 0644)
+// 		if err != nil {
+// 			log.Fatalf("Failed to write file: %v", err)
+// 		}
+
+// 		elapsedTime := time.Since(startTime)
+// 		fmt.Printf("Saved path %d to '%s' (took %.2f seconds)\n",
+// 			pathsFound, filename, elapsedTime.Seconds())
+
+// 		fmt.Printf("Path %d has %d nodes and %d recipes\n",
+// 			pathsFound, len(result.Nodes), len(result.Recipes))
+
+// 		// if len(result.Recipes) > 0 {
+// 		// 	fmt.Println("Cek ancestry signatures:")
+// 		// 	count := 0
+// 		// 	for key := range usedElemComb {
+// 		// 		if count >= 3 {
+// 		// 			break
+// 		// 		}
+// 		// 		fmt.Printf("  %s\n", key)
+// 		// 		count++
+// 		// 	}
+// 		// }
+// 	}
+
+// 	if pathsFound < maxPaths {
+// 		fmt.Printf("\nFound %d paths out of %d requested. No more unique paths available.\n",
+// 			pathsFound, maxPaths)
+// 	} else {
+// 		fmt.Printf("\nSuccessfully found all %d requested paths.\n", maxPaths)
+// 	}
+// }
