@@ -241,6 +241,10 @@ func ParseCraftingPath(result *ResultTree, counter int, graph *search.RecipeGrap
 	pathJSON := make(map[string]RecipeJSON)
 	for _, recipe := range result.path {
 		if slices.Contains(graph.BaseElements, recipe.element) {
+			pathJSON[fmt.Sprintf("%d", recipeToID[recipe])] = RecipeJSON{
+				Element: recipe.element.Name,
+				Recipe:  []string{},
+			}
 			continue
 		}
 
