@@ -109,7 +109,7 @@ return (
           className={`px-4 rounded-sm w-20 ${
             !searchQuery.trim() 
               ? 'bg-[#d6bd9877] text-[#1E1E1E] cursor-not-allowed' 
-              : 'bg-[#D6BD98] text-[#1E1E1E] hover:bg-amber-300'
+              : 'bg-[#D6BD98] text-[#1E1E1E] hover:text-[#40534C] hover:bg-white'
           }`}
         >
           Search
