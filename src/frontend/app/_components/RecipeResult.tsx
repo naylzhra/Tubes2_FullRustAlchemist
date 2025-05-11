@@ -222,7 +222,7 @@ const RecipeResult: React.FC<RecipeResultProps> = ({ graph }) => {
         <ul className="text-sm list-disc pl-5 space-y-1">
           {graph.recipes.map((r, i) => (
             <li key={i}>
-              <span className="text-gray-600">{r.ingredients.join(" + ")}</span>{" "}
+              <span className="text-[#D6BD98]">{r.ingredients.join(" + ")}</span>{" "}
               ➜ <span className="font-medium">{r.result}</span>
             </li>
           ))}
