@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Josefin_Sans } from 'next/font/google';
+import ScrollingElements from '../_components/ScrollingElements';
 
 const josefinSans = Josefin_Sans({
   subsets: ['latin'],
@@ -84,7 +85,7 @@ return (
       </div>
     </div>
     <div className="flex flex-col items-center">
-      <div className="flex justify-center h-10 space-x-3 gap-3">
+      <div className="flex justify-center h-10 space-x-3 gap-3 mb-10">
         <div className="flex items-center">
           <select 
             value={selectedAlgo}
@@ -121,6 +122,7 @@ return (
         </div>
       )}
     </div>
+    <ScrollingElements />
   </div>
   );
 } 
