@@ -25,11 +25,6 @@ type Recipe struct {
 	composition []*Recipe
 }
 
-type RecipeJSON struct {
-	Element string   `json:"element"`
-	Recipe  []string `json:"recipe"`
-}
-
 func DFS(target *search.ElementNode, graph *search.RecipeGraph, maxPaths int, nodeVisited *int) []string {
 	if maxPaths == 1 {
 		result := &ResultTree{path: make([]*Recipe, 0)}
@@ -198,6 +193,20 @@ func pathAlreadyContains(prevs []*search.ElementNode, elem *search.ElementNode) 
 
 /* ----------------------------------------- Parse Search Output ----------------------------------------------- */
 
+type NodeJSON struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type RecipeJSON struct {
+	Element string   `json:"element"`
+	Recipe  []string `json:"recipe"`
+}
+
+type ResultJSON struct {
+	Recipes []RecipeJSON
+}
+
 func ParseCraftingPath(result *ResultTree, counter int, graph *search.RecipeGraph) string {
 	// ResultTree is locked in the caller side
 	resultFile := "result_" + fmt.Sprintf("%03d", counter) + ".json"
@@ -217,7 +226,7 @@ func ParseCraftingPath(result *ResultTree, counter int, graph *search.RecipeGrap
 			Recipe:  make([]string, len(recipe.composition)),
 		}
 		for i, comp := range recipe.composition {
-			pathJSON[fmt.Sprintf("%d", recipeToID[recipe])].Recipe[i] = comp.element.Name
+			pathJSON[fmt.Sprintf("%d", recipeToID[recipe])].Recipe[i] = fmt.Sprintf("%d", recipeToID[comp])
 		}
 	}
 
