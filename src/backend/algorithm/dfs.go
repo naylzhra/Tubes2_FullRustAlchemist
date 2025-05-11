@@ -35,7 +35,7 @@ func DFS(target *search.ElementNode, graph *search.RecipeGraph, maxPaths int) []
 		result := &ResultTree{path: make([]*Recipe, 0)}
 		findSinglePath(target, graph, result)
 
-		return []string{ParseCraftingPath(result, 1)}
+		return []string{ParseCraftingPath(result, 1, graph)}
 	}
 
 	// Multithreaded multiple recipe DFS
@@ -197,7 +197,7 @@ func pathAlreadyContains(prevs []*search.ElementNode, elem *search.ElementNode) 
 
 /* ----------------------------------------- Parse Search Output ----------------------------------------------- */
 
-func ParseCraftingPath(result *ResultTree, counter int) string {
+func ParseCraftingPath(result *ResultTree, counter int, graph *search.RecipeGraph) string {
 	// ResultTree is locked in the caller side
 	resultFile := "result_" + fmt.Sprintf("%03d", counter) + ".json"
 
@@ -207,6 +207,10 @@ func ParseCraftingPath(result *ResultTree, counter int) string {
 	}
 	pathJSON := make(map[string]RecipeJSON)
 	for _, recipe := range result.path {
+		if slices.Contains(graph.BaseElements, recipe.element) {
+			continue
+		}
+
 		pathJSON[fmt.Sprintf("%d", recipeToID[recipe])] = RecipeJSON{
 			Element: recipe.element.Name,
 			Recipe:  make([]string, len(recipe.composition)),
