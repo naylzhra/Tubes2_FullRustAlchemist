@@ -4,11 +4,13 @@ import * as d3 from "d3";
 
 export type GraphNode = { id: number; name: string };
 export type GraphRecipe = { ingredients: string[]; result: string; step: number };
-export interface GraphData {
-  nodes: GraphNode[];
-  recipes: GraphRecipe[];
-  elapsed?: string;
-}
+type GraphData = { 
+  nodes: any[]; 
+  recipes: any[]; 
+  elapsed?: string; 
+  visitedNodes?: number;
+};
+
 
 interface RecipeResultProps {
   graph: GraphData;
@@ -218,20 +220,20 @@ const RecipeResult: React.FC<RecipeResultProps> = ({ graph }) => {
   return (
     <div className="flex flex-col gap-4">
       <div className="border rounded p-4 w-full">
-        <h3 className="font-semibold mb-2">Recipe steps</h3>
+        <h3 className="font-semibold mb-2 text-white">Recipe steps</h3>
         <ul className="text-sm list-disc pl-5 space-y-1">
-          {graph.recipes.map((r, i) => (
-            <li key={i}>
-              <span className="text-[#D6BD98]">{r.ingredients.join(" + ")}</span>{" "}
-              ➜ <span className="font-medium">{r.result}</span>
-            </li>
-          ))}
+          {graph.recipes && graph.recipes.length > 0 && graph.recipes.map((r, i) => (
+          <li key={i}>
+            <span className="text-[#D6BD98]">{r.ingredients.join(" + ")}</span>{" "}
+            ➜ <span className="font-medium text-white">{r.result}</span>
+          </li>
+        ))}
         </ul>
       </div>
 
       <div className="border rounded p-4 relative">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold">Recipe Tree</h3>
+          <h3 className="font-semibold text-white">Recipe Tree</h3>
         </div>
         <div className="w-full overflow-auto max-h-screen">
           <svg ref={svgRef} style={{ width: "100%", height: "1400px" }}></svg>

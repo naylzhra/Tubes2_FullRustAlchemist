@@ -10,7 +10,7 @@ interface GraphData { nodes: GraphNode[]; recipes: GraphRecipe[] }
 
 type ErrorResponse = { error: true;  type: string; message: string };
 type SuccessResponseMR = {
-  data: { algo: string; element: string; paths: GraphData[] };
+  data: { algo: string; element: string; paths: GraphData[]; visitedNodes: number };
   error: false;
 };
 type ApiResponse = ErrorResponse | SuccessResponseMR;
@@ -54,10 +54,10 @@ const MultiResult = () => {
           throw new Error(message || `Error: ${type}`);
         }
 
-        const { paths } = (json as SuccessResponseMR).data;
+        const { paths, visitedNodes } = (json as SuccessResponseMR).data;
         setPaths(paths);
         setElapsed(Math.round(t1 - t0));
-        setVisited(paths.reduce((sum, p) => sum + p.nodes.length, 0));
+        setVisited(visitedNodes);        
         setError(null);
       } catch (e: any) {
         setError(e.message);
