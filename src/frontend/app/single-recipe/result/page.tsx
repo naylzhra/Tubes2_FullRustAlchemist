@@ -3,44 +3,99 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import RecipeResult from "../../_components/RecipeResult";
 
+type ErrorResponse = {
+  error: true;
+  type: string;
+  message: string;
+};
+
+type SuccessResponse = {
+  error: false;
+  data: GraphData;
+};
+
+type ApiResponse = ErrorResponse | SuccessResponse;
+
 type GraphData = { nodes: any[]; recipes: any[]; elapsed?: string };
 
-export default function Result() {
+const Result = () => {
   const params = useSearchParams();
   const router = useRouter();
   const element = params.get("element") || "";
-  const algo    = params.get("algo")    || "bfs";
+  const algo    = params.get("algo")?.toLowerCase()    || "bfs";
 
   const [data, setData]   = useState<GraphData | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>('error test');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!element) return;
+    if (!element) {
+      setError("No element specified");
+      setIsLoading(false);
+      return;
+    }
 
     (async () => {
       try {
+        setIsLoading(true);
         const t0 = performance.now();
         const res = await fetch(
           `/api/recipe?element=${encodeURIComponent(element)}&algo=${algo}`
         );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json: GraphData = await res.json();
-        json.elapsed = (performance.now() - t0).toString();
-        setData(json);
+        const json = await res.json() as ApiResponse;
+        if (json.error) {
+          const errorResponse = json as ErrorResponse;
+          throw new Error(errorResponse.message || `Error: ${errorResponse.type}`);
+        }
+
+        const successResponse = json as SuccessResponse;
+        const graphData = successResponse.data;
+
+        graphData.elapsed = (performance.now() - t0).toFixed(2)
+        setData(graphData);
+        setError(null);
+
       } catch (e: any) {
-        setError(e.message);
+        console.error("Error fetching recipe:", e);
+        setError(e.message || "An unknown error occurred");
+        setData(null);
+      } finally {
+        setIsLoading(false);
       }
     })();
   }, [element, algo]);
 
-  if (error) return <p className="text-red-400">{error}</p>;
-  if (!data)  return <p>Loading…</p>;
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#D6BD98]"></div>
+      </div>
+    );
+  }
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center p-[2%]">
+        <div className="bg-red-500 bg-opacity-20 border border-red-500 rounded-md p-4 max-w-md w-full mb-6">
+          <p className="text-red-300 text-center">{error}</p>
+        </div>
+        
+        <button
+          className="m-[10px] p-[10px] w-[199px] h-[44px] border
+                    border-[#d6bd98] rounded-[12px] bg-[#d6bd98] text-[#1E1E1E]"
+          onClick={() => router.back()}
+        >
+          Back
+        </button>
+      </div>
+    );
+  }  
+  
   return (
     <div className="flex flex-col items-center p-[2%]">
-      <p className="w-[510px] h-[58px] m-[5px] p-[10px] border
+      <p className="w-[510px] h-[58px] m-[5px] p-4 border
                    border-[var(--foreground)] bg-[var(--foreground)]
-                   rounded-[12px]">
+                   rounded-[12px] text-white text-center">
         {element}
       </p>
       <div className="flex justify-between w-[510px] text-[#b3b3b3] m-[5px]">
@@ -60,3 +115,5 @@ export default function Result() {
     </div>
   );
 }
+
+export default Result;
