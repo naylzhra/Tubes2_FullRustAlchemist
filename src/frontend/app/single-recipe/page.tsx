@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Josefin_Sans } from 'next/font/google';
+import ScrollingElements from '../_components/ScrollingElements';
 
 const josefinSans = Josefin_Sans({
   subsets: ['latin'],
@@ -48,14 +49,14 @@ const SingleRecipePage = () => {
   };
 
 return (
-  <div className="min-h-screen text-white p-8">
+  <div className="min-h-screen text-white p-8 overflow-y-hidden">
     {/* Title */}
     <div className="mt-4 text-center items-center">
       <h1 className={`text-6xl font-bold text-white ${josefinSans.className}`}>
         Little <span className="bg-gradient-to-br from-purple-[#798772] to-[#D6BD98] bg-clip-text text-transparent">Alchemy</span> Recipe
       </h1>
     </div>
-    <div className="mt-10 flex flex-col items-center">
+    <div className="mt-10 flex flex-col items-center mb-10">
       <div className="flex justify-center h-10 space-x-3">
         <div className="flex items-center">
           <select 
@@ -93,6 +94,7 @@ return (
         </div>
       )}
     </div>
+    <ScrollingElements />
   </div>
   );
 } 
