@@ -42,6 +42,7 @@ func main() {
 		element := c.Query("element")
 		algo := strings.ToLower(c.DefaultQuery("algo", "bfs"))
 
+
 		if element == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error":   true,
@@ -65,6 +66,7 @@ func main() {
 		switch algo {
 		case "bfs":
 			result := algorithm.ReverseBFS(node, 1)
+
 			c.JSON(http.StatusOK, gin.H{
 				"error": false,
 				"data":  result,
@@ -84,6 +86,7 @@ func main() {
 	r.GET("/api/recipes", func(c *gin.Context) {
 		element := c.Query("element")
 		algo := strings.ToLower(c.DefaultQuery("algo", "bfs"))
+
 
 		if element == "" {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -106,6 +109,7 @@ func main() {
 
 		node, err := search.GetElementByName(&graph, element)
 		if err != nil {
+
 			c.JSON(http.StatusNotFound, gin.H{
 				"error":   true,
 				"type":    "element_not_found",
@@ -116,6 +120,7 @@ func main() {
 
 		paths := make([]*algorithm.GraphJSONWithRecipes, 0, max)
 		algorithm.ResetCaches()
+
 
 		var p *algorithm.GraphJSONWithRecipes
 		switch algo {
