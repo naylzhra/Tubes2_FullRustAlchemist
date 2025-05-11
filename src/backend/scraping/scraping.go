@@ -139,21 +139,21 @@ func ScrapeRecipes(scrapeIcon bool) error {
 		if err != nil {
 			return
 		}
-		fmt.Println("Tier:", tier)
+		// fmt.Println("Tier:", tier)
 
 		table := heading.Next()
 		table = table.Next()
 		table.Eq(0).Find("tr").Each(func(index int, row *goquery.Selection) {
 			if index == 0 {
 				if row.Find("td").Eq(0).Text() != "Element" || row.Find("td").Eq(1).Text() != "Recipes" {
-					fmt.Println("Not a tiering table:", row.Find("td").Eq(0).Text(), row.Find("td").Eq(1).Text())
+					// fmt.Println("Not a tiering table:", row.Find("td").Eq(0).Text(), row.Find("td").Eq(1).Text())
 					return
 				}
 			}
 			columns := row.Find("td")
 			element := columns.Eq(0).Text()
 			if element != "" {
-				fmt.Println("Tiering element:", element, "tier:", tier)
+				// fmt.Println("Tiering element:", element, "tier:", tier)
 				element = strings.TrimSpace(element)
 				recipesJSON.Tiering[element] = tier
 			}
