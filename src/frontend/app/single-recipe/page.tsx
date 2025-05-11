@@ -12,35 +12,40 @@ const SingleRecipePage = () => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAlgo, setSelectedAlgo] = useState(1); // 0 = none, 1 = BFS, 2 = DFS
-  
+  const [errorMessage, setErrorMessage] = useState('');
   // Mock data for element grid
-const elements = Array(16).fill(null);
+  const elements = Array(16).fill(null);
 
-const handleSearch = async () => {
-  if (!searchQuery.trim()) {
-    return;
-  }
-  console.log(`Searching for: ${searchQuery} using ${selectedAlgo === 1 ? 'BFS' : 'DFS'}`);
-  const algo = selectedAlgo === 1 ? 'BFS' : 'DFS';
-  try {
-    const response = await fetch(`/api/recipe?element=${encodeURIComponent(searchQuery.trim())}&algo=${algo}`);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      return;
     }
-    const data = await response.json();
-    console.log(data);
-    router.push(
-    `/single-recipe/result?element=${encodeURIComponent(searchQuery.trim())}` +
-    `&algo=${algo}`
-  );
-  } catch (error) {
-    console.error("Error fetching recipe:", error);
-  }
-};
+    setErrorMessage('');
+    console.log(`Searching for: ${searchQuery} using ${selectedAlgo === 1 ? 'BFS' : 'DFS'}`);
+    const algo = selectedAlgo === 1 ? 'BFS' : 'DFS';
+    try {
+      const response = await fetch(`/api/recipe?element=${encodeURIComponent(searchQuery.trim())}&algo=${algo}`);
+      const data = await response.json();
+      console.log(data);
 
-const handleInputChange = (e) => {
-  setSearchQuery(e.target.value);
-};
+      if (data.error) {
+        setErrorMessage(data.message || `Error: ${data.type}`);
+        return;
+      }
+
+      router.push(
+      `/single-recipe/result?element=${encodeURIComponent(searchQuery.trim())}` +
+      `&algo=${algo}`
+      );
+    } catch (error) {
+      console.error("Error fetching recipe:", error);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setSearchQuery(e.target.value);
+    setErrorMessage('');
+  };
 
 return (
   <div className="min-h-screen text-white p-8">
@@ -81,7 +86,12 @@ return (
         >
           Search
         </button>
-      </div>  
+      </div>
+      {errorMessage && (
+        <div className="p-1 bg-opacity-20 rounded-md text-center max-w-md">
+          <p className="text-[#B3B3B3]">{errorMessage}</p>
+        </div>
+      )}
     </div>
   </div>
   );
