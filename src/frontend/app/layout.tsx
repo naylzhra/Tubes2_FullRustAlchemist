@@ -22,7 +22,6 @@ export default function RootLayout({
         style={{ scrollBehavior: "smooth" }}
       >
         <div className="flex h-fit min-h-screen w-screen flex-col">
-          <Navbar/>
           {children}
         </div>
       </body>

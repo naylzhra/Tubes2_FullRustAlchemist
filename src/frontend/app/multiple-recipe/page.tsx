@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Josefin_Sans } from 'next/font/google';
 import ScrollingElements from '../_components/ScrollingElements';
+import Navbar from '../_components/Navbar';
 
 const josefinSans = Josefin_Sans({
   subsets: ['latin'],
@@ -15,8 +16,8 @@ const [searchQuery, setSearchQuery] = useState('');
 const [selectedAlgo, setSelectedAlgo] = useState(1); // 0 = none, 1 = BFS, 2 = DFS
 const [selectedNumR, setSelectedNumR] = useState(5); //num of recipes
 const [errorMessage, setErrorMessage] = useState('');
+const [mode, setMode] = useState(2);
 
-// Mock data for element grid
 const elements = Array(16).fill(null);
 
 const handleSearch = async () => {
@@ -85,7 +86,7 @@ return (
       </div>
     </div>
     <div className="flex flex-col items-center">
-      <div className="flex justify-center h-10 space-x-3 gap-3 mb-10">
+      <div className="flex justify-center h-10 space-x-3 gap-3">
         <div className="flex items-center">
           <select 
             value={selectedAlgo}
