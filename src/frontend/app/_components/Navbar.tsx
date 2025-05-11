@@ -19,16 +19,20 @@ const Navbar = ({ variant, currentRecipeMode, setRecipeMode }: NavbarProps) => {
   const router = useRouter();
 
   const wrapper =
-    "grid grid-cols-2 items-center justify-center mx-[10px] p-0 h-[60%] " +
-    "w-96 rounded-[200px] border-2 border-[var(--foreground)] " +
+    "grid grid-cols-2 items-center justify-center mx-[10px] h-8.5 " +
+    "w-[350px] rounded-[200px] border-2 border-[var(--foreground)] " +
     "bg-[var(--foreground)]";
-
+  
   const highlight =
-    "h-[85%] w-[95%] bg-[#FFFFFF] mx-[5px] text-[var(--foreground)] " +
-    "rounded-[200px] flex justify-center items-center";
+    "h-[85%] w-[95%] bg-white/70 mx-[5px] text-[var(--background)] " +
+    "rounded-[200px] flex justify-center items-center text-sm text-bold";
+  const inactive =
+    "h-[85%] w-[95%] mx-[5px] rounded-[200px] flex justify-center items-center " +
+    "text-white text-sm cursor-pointer " +
+    "transition duration-200 hover:scale-105";
 
   const maybeHighlight = (n: number) =>
-    currentRecipeMode === n ? highlight : "flex justify-center items-center";
+    currentRecipeMode === n ? highlight : inactive;
 
   const handleClickSR = (setRecipeMode: (value: number) => void) => {
     if (setRecipeMode) {
@@ -59,7 +63,7 @@ const Navbar = ({ variant, currentRecipeMode, setRecipeMode }: NavbarProps) => {
             WebkitMaskPosition: "center",
           }}
         />
-        <p className={`text-[#f3f3f3] text-lg leading-none ${josefinSans.className}`}>
+        <p className={`text-[#f3f3f3] text-lg leading-none transition duration-200 hover:scale-110 ${josefinSans.className}`}>
           Home
         </p>
       </div>
