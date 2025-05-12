@@ -25,6 +25,12 @@ const handleSearch = async () => {
   if (!searchQuery.trim()) {
     return;
   }
+
+  if (searchQuery === 'Fire' || searchQuery === 'Water' || searchQuery === 'Earth' || searchQuery === 'Air') {
+    setErrorMessage(searchQuery + ' is a base element.');
+    setSearchQuery('');
+    return;
+  }
   setErrorMessage('');
   const algo = selectedAlgo === 1 ? "bfs" : "dfs";
   console.log(`Searching for: ${searchQuery} using ${selectedAlgo === 1 ? 'BFS' : 'DFS'}`);
@@ -55,6 +61,10 @@ const handleSearch = async () => {
 
 const handleInputQuery = (e) => {
   setSearchQuery(e.target.value);
+  if(selectedNumR <=0 || isNaN(selectedNumR)) {
+    return;
+  }
+  setErrorMessage('');
 };
 
 const handleInputNumR = (e) => {
@@ -114,7 +124,7 @@ return (
             onClick={handleSearch}
             disabled={!searchQuery.trim() || isNaN(selectedNumR) || selectedNumR <= 0}
             className={`rounded-lg w-20 text-center items-center ${
-              !searchQuery.trim() || isNaN(selectedNumR) || selectedNumR <= 0
+              !searchQuery.trim() || isNaN(selectedNumR) || selectedNumR <= 0 
                 ? 'bg-[#d6bd9877] text-[#1E1E1E] cursor-not-allowed'
                 : 'bg-[#D6BD98] text-[#1E1E1E] hover:bg-[#E3B879]'
             }`}
