@@ -99,7 +99,7 @@ const MultiResult = () => {
           throw new Error("Invalid response format from server");
         }
         
-        console.log("API response:", JSON.stringify(json, null, 2));
+        // console.log("API response:", JSON.stringify(json, null, 2));
         setDebugData(json);
 
         if (json.error) {
