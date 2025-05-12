@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   backend:
     build:
@@ -17,8 +16,8 @@ services:
       - "3000:3000"
     networks:
       - appnet
-    depends_on:
-      - backend
+    restart:
+      unless-stopped
 
 networks:
   appnet:

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import RecipeResult from "../../_components/RecipeResult";
 import Navbar from "../../_components/Navbar";
+import config from "@/config";
 
 type ErrorResponse = {
   error: true;
@@ -47,7 +48,7 @@ const Result = () => {
         setIsLoading(true);
         const t0 = performance.now();
         const res = await fetch(
-          `/api/recipe?element=${encodeURIComponent(element)}&algo=${algo}`
+          `${config.API_URL}/api/recipe?element=${encodeURIComponent(element)}&algo=${algo}`
         );
         const json = await res.json() as ApiResponse;
         if (json.error) {

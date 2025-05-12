@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Josefin_Sans } from 'next/font/google';
 import ScrollingElements from '../_components/ScrollingElements';
 import Navbar from '../_components/Navbar';
+import config from '@/config';
 
 const josefinSans = Josefin_Sans({
   subsets: ['latin'],
@@ -27,7 +28,7 @@ const SingleRecipePage = () => {
     console.log(`Searching for: ${searchQuery} using ${selectedAlgo === 1 ? 'BFS' : 'DFS'}`);
     const algo = selectedAlgo === 1 ? 'BFS' : 'DFS';
     try {
-      const response = await fetch(`/api/recipe?element=${encodeURIComponent(searchQuery.trim())}&algo=${algo}`);
+      const response = await fetch(`${config.API_URL}/api/recipe?element=${encodeURIComponent(searchQuery.trim())}&algo=${algo}`);
       const data = await response.json();
       console.log(data);
 
