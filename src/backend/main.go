@@ -8,17 +8,17 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-
-	"strings"
 )
 
 func main() {
 	if err := scraping.ScrapeRecipes(false); err != nil {
 		panic(err)
 	}
+
 	recipes, err := scraping.GetScrapedRecipesJSON()
 	if err != nil {
 		panic(err)
@@ -76,8 +76,19 @@ func main() {
 				},
 			})
 		case "dfs":
-			result := algorithm.DFS(node, &graph, 1, nil) // sementara ya yang nil
-			c.JSON(http.StatusOK, result)
+			var nodeVisited int
+			result := algorithm.DFS(node, &graph, 1, &nodeVisited)
+			log.Printf("Jumlah node yang dikunjungi: %d\n", nodeVisited)
+
+			if len(result) > 0 {
+				c.JSON(http.StatusOK, gin.H{
+					"error": false,
+					"data": gin.H{
+						"nodes":        result[0],
+						"visitedNodes": nodeVisited,
+					},
+				})
+			}
 		default:
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error":   true,
@@ -112,7 +123,6 @@ func main() {
 
 		node, err := search.GetElementByName(&graph, element)
 		if err != nil {
-
 			c.JSON(http.StatusNotFound, gin.H{
 				"error":   true,
 				"type":    "element_not_found",
@@ -121,13 +131,12 @@ func main() {
 			return
 		}
 
-		paths := make([]*algorithm.GraphJSONWithRecipes, 0, max)
 		algorithm.ResetCaches()
 
-		//var p *algorithm.GraphJSONWithRecipes
 		switch algo {
 		case "bfs":
 			totalVisited := 0
+			paths := make([]*algorithm.GraphJSONWithRecipes, 0, max)
 			for i := 0; i < max; i++ {
 				p, visitedCount := algorithm.ReverseBFS(node, i+1)
 				if len(p.Recipes) == 0 {
@@ -145,8 +154,19 @@ func main() {
 					"visitedNodes": totalVisited,
 				},
 			})
-		// case "dfs":
-		//     p = algorithm.ReverseDFS(node, i+1) // implement if needed
+		case "dfs":
+			var nodeVisited int
+			results := algorithm.DFS(node, &graph, max, &nodeVisited)
+
+			c.JSON(http.StatusOK, gin.H{
+				"error": false,
+				"data": gin.H{
+					"element":      element,
+					"algo":         algo,
+					"paths":        results,
+					"visitedNodes": nodeVisited,
+				},
+			})
 		default:
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error":   true,
@@ -155,7 +175,6 @@ func main() {
 			})
 			return
 		}
-
 	})
 
 	r.Run(":8080")

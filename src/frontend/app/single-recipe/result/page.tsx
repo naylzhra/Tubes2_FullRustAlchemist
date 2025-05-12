@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import RecipeResult from "../../_components/RecipeResult";
+import DFSRecipeResult from "../../_components/DFSRecipeResult";
 import Navbar from "../../_components/Navbar";
 
 type ErrorResponse = {
@@ -10,30 +11,43 @@ type ErrorResponse = {
   message: string;
 };
 
+type BFSGraphData = {
+  nodes: any[];
+  recipes: any[];
+  elapsed?: string;
+  visitedNodes?: number;
+};
+
+type DFSGraphData = {
+  nodes: {
+    [key: string]: {
+      element: string;
+      recipe: string[];
+    }
+  };
+  elapsed?: string;
+  visitedNodes?: number;
+};
+
 type SuccessResponse = {
   error: false;
-  data: GraphData;
+  data: BFSGraphData | DFSGraphData;
 };
 
 type ApiResponse = ErrorResponse | SuccessResponse;
-
-type GraphData = { 
-  nodes: any[]; 
-  recipes: any[]; 
-  elapsed?: string; 
-  visitedNodes?: number;
-};
 
 const Result = () => {
   const params = useSearchParams();
   const router = useRouter();
   const element = params.get("element") || "";
-  const algo    = params.get("algo")?.toLowerCase()    || "bfs";
-  
+  const algo = params.get("algo")?.toLowerCase() || "bfs";
+ 
   const [mode, setMode] = useState(1);
-  const [data, setData]   = useState<GraphData | null>(null);
-  const [error, setError] = useState<string | null>('error test');
+  const [data, setData] = useState<BFSGraphData | DFSGraphData | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [elapsed, setElapsed] = useState<string>("0");
+  const [visitedNodes, setVisitedNodes] = useState<number | undefined>(0);
 
   useEffect(() => {
     if (!element) {
@@ -41,7 +55,6 @@ const Result = () => {
       setIsLoading(false);
       return;
     }
-
     (async () => {
       try {
         setIsLoading(true);
@@ -50,18 +63,33 @@ const Result = () => {
           `/api/recipe?element=${encodeURIComponent(element)}&algo=${algo}`
         );
         const json = await res.json() as ApiResponse;
+        console.log("API Response:", json);
         if (json.error) {
           const errorResponse = json as ErrorResponse;
           throw new Error(errorResponse.message || `Error: ${errorResponse.type}`);
         }
-
         const successResponse = json as SuccessResponse;
         const graphData = successResponse.data;
-
-        graphData.elapsed = (performance.now() - t0).toFixed(2)
+        const elapsedTime = (performance.now() - t0).toFixed(2);
+        
+        // Add elapsed time to graph data
+        graphData.elapsed = graphData.elapsed || elapsedTime;
+        
+        // Set elapsed time in state
+        setElapsed(graphData.elapsed);
+        
+        // Set visited nodes based on algorithm
+        if (algo === "bfs") {
+          const bfsData = graphData as BFSGraphData;
+          setVisitedNodes(bfsData.visitedNodes);
+        } else {
+          const dfsData = graphData as DFSGraphData;
+          setVisitedNodes(dfsData.visitedNodes);
+        }
+        
+        console.log('Graph Data to be set:', graphData);
         setData(graphData);
         setError(null);
-
       } catch (e: any) {
         console.error("Error fetching recipe:", e);
         setError(e.message || "An unknown error occurred");
@@ -71,6 +99,7 @@ const Result = () => {
       }
     })();
   }, [element, algo]);
+  
 
   if (isLoading) {
     return (
@@ -79,7 +108,7 @@ const Result = () => {
       </div>
     );
   }
-  
+ 
   if (error) {
     return (
       <div className="max-h-screen flex flex-col bg-[var(--background)]">
@@ -88,7 +117,7 @@ const Result = () => {
           <div className="rounded-md mt-10 max-w-md w-full mb-4">
             <p className="text-white text-center">{error}</p>
           </div>
-          
+         
           <button
             className="p-[10px] w-20 h-[44px] border
                       border-[#d6bd98] rounded-md bg-[#d6bd98] text-[#1E1E1E]"
@@ -100,7 +129,7 @@ const Result = () => {
       </div>
     );
   }  
-  
+ 
   return (
     <div className="max-h-screen flex flex-col bg-[var(--background)]">
       <Navbar variant="single" currentRecipeMode={mode} setRecipeMode={setMode} />
@@ -111,15 +140,25 @@ const Result = () => {
           {element}
         </p>
         <div className="flex justify-between w-[510px] text-[#b3b3b3] m-[5px]">
-          <p>Time execution: {data.elapsed} ms</p>
-          <p>Visited nodes: {data?.visitedNodes}</p>
+          <p>Time execution: {elapsed} ms</p>
+          <p>Visited nodes: {visitedNodes}</p>
         </div>
-
-        <RecipeResult graph={data} />
-
+        
+        {algo === "bfs" ? (
+          <>
+            {console.log("Data yang dikirim ke RecipeResult:", data)}
+            <RecipeResult graph={data as BFSGraphData} />
+          </>
+        ) : (
+          <>
+            {console.log("Data yang dikirim ke DFSRecipeResult:", data)}
+            <DFSRecipeResult graph={data as DFSGraphData} />
+          </>
+        )}
+        
         <button
           className="m-[10px] p-[10px] w-[199px] h-[44px] border
-                    border-[#d6bd98] rounded-[12px] bg-[#d6bd98]"
+                    border-[#d6bd98] rounded-[12px] bg-[#d6bd98] text-[#1E1E1E]"
           onClick={() => router.back()}
         >
           Back

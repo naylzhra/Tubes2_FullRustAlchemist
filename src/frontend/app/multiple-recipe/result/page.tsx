@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import RecipeResult from "../../_components/RecipeResult";
 import Navbar from "../../_components/Navbar";
+import config from "@/config";
 
 type GraphNode   = { id: number; name: string };
 type GraphRecipe = { ingredients: string[]; result: string; step: number };
@@ -42,7 +43,7 @@ const MultiResult = () => {
         setIsLoading(true);
         const t0  = performance.now();
         const res = await fetch(
-          `/api/recipes?element=${encodeURIComponent(element)}` +
+          `${config.API_URL}/api/recipes?element=${encodeURIComponent(element)}` +
           `&algo=${algo}&max=${max}`
         );
         const t1  = performance.now();

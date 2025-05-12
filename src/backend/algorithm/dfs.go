@@ -2,12 +2,26 @@ package algorithm
 
 import (
 	"backend/search"
-	"encoding/json"
 	"fmt"
-	"os"
 	"slices"
 	"sync"
 )
+
+type GraphJSONNode struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type GraphJSONRecipe struct {
+	ID      int   `json:"id"`
+	Element int   `json:"element"`
+	Recipe  []int `json:"recipe"`
+}
+
+type DFSGraphJSONWithRecipes struct {
+	Nodes   []GraphJSONNode   `json:"nodes"`
+	Recipes []GraphJSONRecipe `json:"recipes"`
+}
 
 type ResultTree struct {
 	mu   sync.Mutex
@@ -19,12 +33,16 @@ type Recipe struct {
 	composition []*Recipe
 }
 
-func DFS(target *search.ElementNode, graph *search.RecipeGraph, maxPaths int, nodeVisited *int) []string {
+// Struktur untuk menyimpan hasil JSON
+type PathResult map[string]RecipeJSON
+
+// DFS sekarang mengembalikan slice dari PathResult, bukan nama file
+func DFS(target *search.ElementNode, graph *search.RecipeGraph, maxPaths int, nodeVisited *int) []PathResult {
 	if maxPaths == 1 {
 		result := &ResultTree{path: make([]*Recipe, 0)}
 		findSinglePath(target, graph, result, nodeVisited)
 
-		return []string{ParseCraftingPath(result, 1, graph)}
+		return []PathResult{ParseCraftingPathToJSON(result, graph)}
 	}
 
 	return findMultiplePaths(target, graph, maxPaths, nodeVisited)
@@ -93,8 +111,9 @@ type SearchStatistic struct {
 	nodeVisited    int
 }
 
-func findMultiplePaths(target *search.ElementNode, graph *search.RecipeGraph, maxPaths int, nodeVisited *int) []string {
-	resultJSONs := make([]string, 0, maxPaths)
+// Modifikasi untuk mengembalikan slice dari PathResult alih-alih nama file
+func findMultiplePaths(target *search.ElementNode, graph *search.RecipeGraph, maxPaths int, nodeVisited *int) []PathResult {
+	resultJSONs := make([]PathResult, 0, maxPaths)
 
 	status := SearchStatus{
 		result:         make(chan int),
@@ -114,8 +133,9 @@ func findMultiplePaths(target *search.ElementNode, graph *search.RecipeGraph, ma
 	for condition != 0 {
 		counter++
 
-		newFilename := ParseCraftingPath(result, counter, graph)
-		resultJSONs = append(resultJSONs, newFilename)
+		// Convert result to JSON instead of writing to file
+		pathJSON := ParseCraftingPathToJSON(result, graph)
+		resultJSONs = append(resultJSONs, pathJSON)
 
 		if counter >= maxPaths {
 			status.continueSignal <- 0
@@ -230,15 +250,15 @@ type ResultJSON struct {
 	Recipes []RecipeJSON
 }
 
-func ParseCraftingPath(result *ResultTree, counter int, graph *search.RecipeGraph) string {
+// Fungsi baru yang hanya mengembalikan PathResult tanpa menyimpan ke file
+func ParseCraftingPathToJSON(result *ResultTree, graph *search.RecipeGraph) PathResult {
 	// ResultTree is locked in the caller side
-	resultFile := "result_" + fmt.Sprintf("%03d", counter) + ".json"
-
 	recipeToID := make(map[*Recipe]int)
 	for i, recipe := range result.path {
 		recipeToID[recipe] = i
 	}
-	pathJSON := make(map[string]RecipeJSON)
+
+	pathJSON := make(PathResult)
 	for _, recipe := range result.path {
 		if slices.Contains(graph.BaseElements, recipe.element) {
 			pathJSON[fmt.Sprintf("%d", recipeToID[recipe])] = RecipeJSON{
@@ -257,25 +277,128 @@ func ParseCraftingPath(result *ResultTree, counter int, graph *search.RecipeGrap
 		}
 	}
 
-	jsonData, err := json.MarshalIndent(pathJSON, "", " ")
-	if err != nil {
-		fmt.Println("Error encoding JSON: ", err)
-		return ""
-	}
-
-	// Write JSON to file
-	file, err := os.Create(resultFile)
-	if err != nil {
-		fmt.Println("Error creating file:", err)
-		return ""
-	}
-	defer file.Close()
-
-	_, err = file.Write(jsonData)
-	if err != nil {
-		fmt.Println("Error writing to file:", err)
-		return ""
-	}
-
-	return resultFile
+	return pathJSON
 }
+
+// Fungsi lama yang menyimpan ke file, tetap dipertahankan untuk kompatibilitas
+func ParseCraftingPathToGraphJSON(result *ResultTree, graph *search.RecipeGraph) DFSGraphJSONWithRecipes {
+	// Map untuk ngasih ID unik ke tiap Recipe
+	recipeToID := make(map[*Recipe]int)
+	for i, recipe := range result.path {
+		recipeToID[recipe] = i
+	}
+
+	nodes := make([]GraphJSONNode, 0, len(result.path))
+	recipes := make([]GraphJSONRecipe, 0, len(result.path))
+
+	for _, recipe := range result.path {
+		id := recipeToID[recipe]
+		nodes = append(nodes, GraphJSONNode{
+			ID:   id,
+			Name: recipe.element.Name,
+		})
+
+		if slices.Contains(graph.BaseElements, recipe.element) {
+			// Base element gak ada resep
+			recipes = append(recipes, GraphJSONRecipe{
+				ID:      id,
+				Element: id,
+				Recipe:  []int{},
+			})
+			continue
+		}
+
+		// Non-base element, ada komponennya
+		compIDs := make([]int, len(recipe.composition))
+		for i, comp := range recipe.composition {
+			compIDs[i] = recipeToID[comp]
+		}
+
+		recipes = append(recipes, GraphJSONRecipe{
+			ID:      id,
+			Element: id,
+			Recipe:  compIDs,
+		})
+	}
+
+	return DFSGraphJSONWithRecipes{
+		Nodes:   nodes,
+		Recipes: recipes,
+	}
+}
+
+// func main() {
+// 	err := scraping.ScrapeRecipes(false)
+// 	if err != nil {
+// 		log.Fatal("Error while scraping recipes:", err)
+// 	}
+
+// 	recipes, err := scraping.GetScrapedRecipesJSON()
+// 	if err != nil {
+// 		log.Fatal("Error loading recipes from JSON:", err)
+// 	}
+
+// 	var graph search.RecipeGraph
+// 	err = search.ConstructRecipeGraph(recipes, &graph)
+// 	if err != nil {
+// 		log.Fatal("Error constructing recipe graph:", err)
+// 	}
+
+// 	reader := bufio.NewReader(os.Stdin)
+
+// 	fmt.Print("Enter target element name: ")
+// 	targetName, _ := reader.ReadString('\n')
+// 	targetName = strings.TrimSpace(targetName)
+
+// 	target, err := search.GetElementByName(&graph, targetName)
+// 	if err != nil {
+// 		log.Fatalf("Error: element '%s' not found.\n", targetName)
+// 	}
+
+// 	fmt.Print("Enter number of paths to find: ")
+// 	inputMax, _ := reader.ReadString('\n')
+// 	inputMax = strings.TrimSpace(inputMax)
+// 	maxPaths, err := strconv.Atoi(inputMax)
+// 	if err != nil || maxPaths <= 0 {
+// 		log.Fatalf("Invalid number: %v\n", inputMax)
+// 	}
+
+// 	nodeVisited := 0
+
+// 	//startTime := time.Now()
+// 	// Panggil DFS yang mengembalikan data JSON
+// 	resultData := DFS(target, &graph, maxPaths, &nodeVisited)
+// 	//elapsedTime := time.Since(startTime)
+
+// 	// Tampilkan hasil
+// 	//fmt.Printf("\nFound %d paths in %.2f seconds.\n", len(resultData), elapsedTime.Seconds())
+// 	fmt.Printf("Visited %d nodes during search.\n", nodeVisited)
+
+// 	// Simpan hasil ke file
+// 	fmt.Println("\nSaving results to files:")
+// 	for i, pathJSON := range resultData {
+// 		resultFile := "result_" + fmt.Sprintf("%03d", i+1) + ".json"
+
+// 		jsonData, err := json.MarshalIndent(pathJSON, "", " ")
+// 		if err != nil {
+// 			fmt.Printf("Error encoding JSON for path %d: %v\n", i+1, err)
+// 			continue
+// 		}
+
+// 		err = os.WriteFile(resultFile, jsonData, 0644)
+// 		if err != nil {
+// 			fmt.Printf("Error writing path %d to file: %v\n", i+1, err)
+// 			continue
+// 		}
+
+// 		fmt.Println("- " + resultFile)
+// 	}
+
+// 	// Optional: Cetak konten file
+// 	for i, pathJSON := range resultData {
+// 		fmt.Printf("\nContents of result_%03d.json:\n", i+1)
+// 		for id, rec := range pathJSON {
+// 			fmt.Printf("- Node %s: %+v\n", id, rec)
+// 		}
+// 	}
+// }
