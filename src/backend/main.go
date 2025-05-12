@@ -65,13 +65,15 @@ func main() {
 
 		switch algo {
 		case "bfs":
-			result, visitedCount := algorithm.ReverseBFS(node, 1)
-			log.Printf("Jumlah node yang dikunjungi: %d\n", visitedCount)
+			big, visitedCount := algorithm.ReverseBFS(node, 1)
+			paths := algorithm.ExpandPaths(*big, element, 1)
+
 			c.JSON(http.StatusOK, gin.H{
 				"error": false,
 				"data": gin.H{
-					"nodes":        result.Nodes,
-					"recipes":      result.Recipes,
+					"algo":         "bfs",
+					"element":      element,
+					"paths":        paths,          // ← what your frontend expects
 					"visitedNodes": visitedCount,
 				},
 			})
@@ -132,26 +134,26 @@ func main() {
 		}
 
 		algorithm.ResetCaches()
-
+		
 		switch algo {
 		case "bfs":
-			totalVisited := 0
-			paths := make([]*algorithm.GraphJSONWithRecipes, 0, max)
-			for i := 0; i < max; i++ {
-				p, visitedCount := algorithm.ReverseBFS(node, i+1)
-				if len(p.Recipes) == 0 {
-					break
-				}
-				paths = append(paths, p)
-				totalVisited += visitedCount
+			big, visited := algorithm.ReverseBFS(node, 1)
+			//print big in terminal
+
+			log.Printf("%+v", big)
+			p := algorithm.ExpandPaths(*big, element, max)
+
+			if len(p) > max {
+				p = p[:max]
 			}
+
 			c.JSON(http.StatusOK, gin.H{
 				"error": false,
 				"data": gin.H{
+					"algo":         "bfs",
 					"element":      element,
-					"algo":         algo,
-					"paths":        paths,
-					"visitedNodes": totalVisited,
+					"paths":        p,
+					"visitedNodes": visited,
 				},
 			})
 		case "dfs":
