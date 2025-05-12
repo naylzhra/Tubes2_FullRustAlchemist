@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Josefin_Sans } from 'next/font/google';
 import ScrollingElements from '../_components/ScrollingElements';
 import Navbar from '../_components/Navbar';
+import config from '@/config';
 
 const josefinSans = Josefin_Sans({
   subsets: ['latin'],
@@ -29,7 +30,7 @@ const handleSearch = async () => {
   console.log(`Searching for: ${searchQuery} using ${selectedAlgo === 1 ? 'BFS' : 'DFS'}`);
   
   try {
-      const response = await fetch(`/api/recipes?element=${encodeURIComponent(searchQuery.trim())}&algo=${algo}&max=${selectedNumR}`);
+      const response = await fetch(`${config.API_URL}/api/recipes?element=${encodeURIComponent(searchQuery.trim())}&algo=${algo}&max=${selectedNumR}`);
       const data = await response.json();
       
       if (data.error) {
