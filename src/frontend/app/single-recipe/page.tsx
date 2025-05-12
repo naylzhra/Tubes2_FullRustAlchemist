@@ -61,7 +61,7 @@ const SingleRecipePage = () => {
 return (
   <div className="max-h-screen flex flex-col bg-[var(--background)]">
     <Navbar variant="single" currentRecipeMode={mode} setRecipeMode={setMode} />
-    <div className="p-8 overflow-y-hidden">
+    <div className="p-8">
       {/* Title */}
       <div className="mt-4 text-center items-center">
         <h1 className={`text-6xl font-bold text-white ${josefinSans.className}`}>
@@ -69,7 +69,7 @@ return (
         </h1>
       </div>
       <div className="mt-10 flex flex-col items-center mb-10">
-        <div className="flex justify-center h-10 space-x-3 mb-2.5">
+        <div className="flex justify-center h-10 space-x-3 mb-1">
           <div className="flex items-center">
             <select 
               value={selectedAlgo}

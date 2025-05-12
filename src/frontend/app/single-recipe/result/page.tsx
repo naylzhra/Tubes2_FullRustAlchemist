@@ -49,6 +49,7 @@ const Result = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [elapsed, setElapsed] = useState<string>("0");
   const [visitedNodes, setVisitedNodes] = useState<number | undefined>(0);
+  const [hasNoRecipe, setHasNoRecipe] = useState(false);
 
   useEffect(() => {
     if (!element) {
@@ -82,9 +83,15 @@ const Result = () => {
         // Set visited nodes based on algorithm
         if (algo === "bfs") {
           const bfsData = graphData as BFSGraphData;
+          if(!bfsData.recipes || bfsData.recipes.length === 0) {
+            setHasNoRecipe(true);
+          }
           setVisitedNodes(bfsData.visitedNodes);
         } else {
           const dfsData = graphData as DFSGraphData;
+          if(Object.keys(dfsData.nodes).length === 0) {
+            setHasNoRecipe(true);
+          }
           setVisitedNodes(dfsData.visitedNodes);
         }
         
@@ -129,7 +136,25 @@ const Result = () => {
         </div>
       </div>
     );
-  }  
+  }
+
+  if (hasNoRecipe) {
+    return (
+      <div className="max-h-screen flex flex-col bg-[var(--background)]">
+        <Navbar variant="single" currentRecipeMode={mode} setRecipeMode={setMode} />
+        <div className="text-white p-8 flex flex-col items-center">
+          <h2 className="text-3xl font-semibold mb-4">
+            No recipes found for <span className="text-[#d6bd98]">{element}</span>
+          </h2>
+          <p className="text-gray-400 mb-6">Try a different element or algorithm.</p>
+          <button className="px-6 py-2 bg-[#d6bd98] rounded text-[#1e1e1e] transition duration-200 hover:scale-105"
+                  onClick={() => router.back()}>
+            Back
+          </button>
+        </div>
+      </div>
+    );
+  }
  
   return (
     <div className="max-h-screen flex flex-col bg-[var(--background)]">

@@ -101,7 +101,7 @@ return (
         </div>
       </div>
       <div className="flex flex-col items-center">
-        <div className="flex justify-center h-10 space-x-3 mb-2.5">
+        <div className="flex justify-center h-10 space-x-3 mb-1">
           <div className="flex items-center">
             <select 
               value={selectedAlgo}
