@@ -119,17 +119,13 @@ type BFSProgressResult struct {
 }
 
 func ReverseBFS(target *search.ElementNode, pathNumber int) (*GraphJSONWithRecipes, int) {
-	visitedNodes := 0
-
 	if isBaseElement(target) {
 		return nil, 0
 	}
 
+	// End result of the search
 	var nodes []JSONNode
 	var recipes []JSONRecipe
-
-	//processedNodes := make(map[int]bool)
-	nodesToInclude := make(map[int]bool)
 
 	// Start with target node and empty ancestry
 	queue := []QueueItem{
@@ -144,17 +140,18 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) (*GraphJSONWithRecip
 	}
 
 	// Add target to results
+	nodesToInclude := make(map[int]bool)
 	nodesToInclude[target.ID] = true
 	nodes = append(nodes, JSONNode{
 		ID:   target.ID,
 		Name: target.Name,
 	})
-
-	nodeStep := make(map[int]int)
-	nodeStep[target.ID] = 0
+	// Recipe map to prevent duplicate JSONRecipe
+	addedRecipe := make(map[string]bool)
 
 	maxIterations := 1000
 	iteration := 0
+	visitedNodes := 0
 
 	nthreads := 4
 	for len(queue) > 0 && iteration < maxIterations {
@@ -185,7 +182,6 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) (*GraphJSONWithRecip
 				nextFrontier = append(nextFrontier, item)
 			}
 		}()
-
 		// Send tasks to routines
 		for _, task := range queue {
 			taskChannel <- task
@@ -195,11 +191,20 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) (*GraphJSONWithRecip
 		// All routine done processing this level
 		wg.Wait()
 		close(nextFrontierChannel)
+		// Merge the results of each routines
 		for _, progress := range progresses {
 			visitedNodes += progress.visitedNodes
 			iteration += progress.iteration
-			recipes = append(recipes, progress.recipes...)
 
+			// Merge recipes uniquely
+			for _, recipe := range progress.recipes {
+				recipeSignature := fmt.Sprintf("%s=%s+%s@%d", recipe.Result, recipe.Ingredients[0], recipe.Ingredients[1], recipe.Step)
+				if _, exists := addedRecipe[recipeSignature]; !exists {
+					addedRecipe[recipeSignature] = true
+					recipes = append(recipes, recipe)
+				}
+			}
+			// Merge all used nodes in recipes
 			for _, node := range progress.nodes {
 				if !nodesToInclude[node.ID] {
 					nodesToInclude[node.ID] = true
