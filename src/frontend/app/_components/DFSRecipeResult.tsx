@@ -28,40 +28,32 @@ const DFSRecipeResult: React.FC<{ graph: DFSGraphData }> = ({ graph }) => {
   const [scale, setScale] = useState(1);
   const [recipes, setRecipes] = useState<{ingredients: string[], result: string, step: number}[]>([]);
 
-  // Function to convert DFS data to the expected recipes format for rendering
   const convertDFSToRecipes = (dfsData: { [key: string]: DFSNode }) => {
     const recipeList: {ingredients: string[], result: string, step: number}[] = [];
     
-    // For each node in the DFS data
     Object.entries(dfsData).forEach(([nodeId, node]) => {
-      // Skip base elements (those with empty recipes)
       if (node.recipe.length === 0) return;
       
-      // Get the ingredient elements from their IDs
       const ingredients = node.recipe.map(id => dfsData[id]?.element || id);
       
       recipeList.push({
         ingredients,
         result: node.element,
-        step: parseInt(nodeId) // Using the nodeId as step number
+        step: parseInt(nodeId) 
       });
     });
     
-    // Sort by step number
     return recipeList.sort((a, b) => a.step - b.step);
   };
 
-  // Function to build a tree from the DFS data
   function buildTree(targetId: string, dfsData: { [key: string]: DFSNode }): any {
     const node = dfsData[targetId];
     if (!node) return null;
     
-    // If this is a base element (no recipe), return a leaf node
     if (node.recipe.length === 0) {
       return { name: node.element };
     }
     
-    // Otherwise, build the tree recursively with its ingredients
     return {
       name: node.element,
       children: node.recipe.map(ingredientId => buildTree(ingredientId, dfsData))
@@ -98,7 +90,6 @@ const DFSRecipeResult: React.FC<{ graph: DFSGraphData }> = ({ graph }) => {
     );
   };
 
-  // Find the target (final) element - it's usually the highest ID
   const findTargetId = (dfsData: { [key: string]: DFSNode }): string => {
     const keys = Object.keys(dfsData).map(Number);
     return String(Math.max(...keys));
@@ -117,22 +108,17 @@ const DFSRecipeResult: React.FC<{ graph: DFSGraphData }> = ({ graph }) => {
       return;
     }
   
-    console.log("Graph data siap:", graph); // Tambahin console.log kayak gini buat ngecek
+    console.log("Graph data siap:", graph);
     
-    // Convert DFS data ke resep
     const convertedRecipes = convertDFSToRecipes(graph.nodes);
     setRecipes(convertedRecipes);
     
-    // Get unique elements
     const elements = getUniqueElements(graph.nodes);
     setUniqueElements(elements);
     
-    // Find the target element ID (usually the last one)
     const targetId = findTargetId(graph.nodes);
-    
-    // Build tree from DFS data
-    const rootData = buildTree(targetId, graph.nodes);
-    
+
+    const rootData = buildTree(targetId, graph.nodes);    
     const maxDepth = calculateMaxDepth(rootData);
     const leafCount = countLeafNodes(rootData);
     

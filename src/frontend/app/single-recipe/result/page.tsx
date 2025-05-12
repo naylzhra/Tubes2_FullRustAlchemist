@@ -141,7 +141,7 @@ const Result = () => {
           {element}
         </p>
         <div className="flex justify-between w-[510px] text-[#b3b3b3] m-[5px]">
-          <p>Time execution: {elapsed} ms</p>
+          <p>Execution time: {elapsed} ms</p>
           <p>Visited nodes: {visitedNodes}</p>
         </div>
         

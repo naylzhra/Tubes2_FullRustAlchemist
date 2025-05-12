@@ -33,10 +33,8 @@ type Recipe struct {
 	composition []*Recipe
 }
 
-// Struktur untuk menyimpan hasil JSON
 type PathResult map[string]RecipeJSON
 
-// DFS sekarang mengembalikan slice dari PathResult, bukan nama file
 func DFS(target *search.ElementNode, graph *search.RecipeGraph, maxPaths int, nodeVisited *int) []PathResult {
 	if maxPaths == 1 {
 		result := &ResultTree{path: make([]*Recipe, 0)}
@@ -111,7 +109,6 @@ type SearchStatistic struct {
 	nodeVisited    int
 }
 
-// Modifikasi untuk mengembalikan slice dari PathResult alih-alih nama file
 func findMultiplePaths(target *search.ElementNode, graph *search.RecipeGraph, maxPaths int, nodeVisited *int) []PathResult {
 	resultJSONs := make([]PathResult, 0, maxPaths)
 
