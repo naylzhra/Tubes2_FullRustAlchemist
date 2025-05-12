@@ -64,6 +64,10 @@ func ScrapeRecipes(scrapeIcon bool) error {
 			element := columns.Eq(0).Text()
 			if element != "" {
 				element = strings.TrimSpace(element)
+				if element == "Time" {
+					return // Hard skip this element, and then all their descendant recipes
+				}
+
 				recipesJSON.Element = append(recipesJSON.Element, element)
 				recipesJSON.Recipe[element] = make([][]string, 0)
 
@@ -78,7 +82,6 @@ func ScrapeRecipes(scrapeIcon bool) error {
 						if errIcom != nil {
 							fmt.Println("Error downloading image:", icon)
 						} else {
-							fmt.Println("Downloading image:", icon)
 							recipesJSON.Icon[element] = filename
 						}
 					}
@@ -116,8 +119,15 @@ func ScrapeRecipes(scrapeIcon bool) error {
 			})
 
 			// Primordial elements
-			if strings.Contains(columns.Eq(1).Text(), "Available from the start") || strings.Contains(columns.Eq(1).Text(), "Have 100 elements unlocked, including the starting elements.") {
+			if strings.Contains(columns.Eq(1).Text(), "Available from the start") {
 				recipesJSON.Recipe[element] = append(recipesJSON.Recipe[element], []string{"", ""})
+			}
+
+			// If no valid recipe exists, delete the element from the list
+			if len(recipesJSON.Recipe[element]) == 0 {
+				delete(recipesJSON.Icon, element)
+				delete(recipesJSON.Recipe, element)
+				fmt.Println("No valid recipe for element: ", element)
 			}
 
 		})
@@ -140,21 +150,18 @@ func ScrapeRecipes(scrapeIcon bool) error {
 		if err != nil {
 			return
 		}
-		// fmt.Println("Tier:", tier)
 
 		table := heading.Next()
 		table = table.Next()
 		table.Eq(0).Find("tr").Each(func(index int, row *goquery.Selection) {
 			if index == 0 {
 				if row.Find("td").Eq(0).Text() != "Element" || row.Find("td").Eq(1).Text() != "Recipes" {
-					// fmt.Println("Not a tiering table:", row.Find("td").Eq(0).Text(), row.Find("td").Eq(1).Text())
 					return
 				}
 			}
 			columns := row.Find("td")
 			element := columns.Eq(0).Text()
 			if element != "" {
-				// fmt.Println("Tiering element:", element, "tier:", tier)
 				element = strings.TrimSpace(element)
 				recipesJSON.Tiering[element] = tier
 			}

@@ -4,9 +4,10 @@ import (
 	"backend/search"
 	"fmt"
 	"sort"
+	"sync"
 )
 
-var visited = make(map[int]bool)
+var usedElemCombMutex = sync.Mutex{}
 var usedElemComb = make(map[string]map[string]bool)
 
 type AncestryChain struct {
@@ -45,7 +46,6 @@ func markElemCombUsed(result string, elem1ID, elem2ID int, ancestryChain *Ancest
 	ids := []int{elem1ID, elem2ID}
 	sort.Ints(ids)
 	combKey := fmt.Sprintf("%d+%d", ids[0], ids[1])
-
 	ancSignature := getAncSignature(ancestryChain)
 	combMapKey := fmt.Sprintf("%s:%s", result, ancSignature)
 
@@ -105,24 +105,27 @@ type GraphJSONWithRecipes struct {
 	Recipes []JSONRecipe `json:"recipes"`
 }
 
-func ReverseBFS(target *search.ElementNode, pathNumber int) (*GraphJSONWithRecipes, int) {
-	visitedNodes := 0
+type QueueItem struct {
+	Node          *search.ElementNode
+	AncestryChain *AncestryChain
+	Depth         int
+}
 
+type BFSProgressResult struct {
+	recipes      []JSONRecipe
+	nodes        []JSONNode
+	visitedNodes int
+	iteration    int
+}
+
+func ReverseBFS(target *search.ElementNode, pathNumber int) (*GraphJSONWithRecipes, int) {
 	if isBaseElement(target) {
 		return nil, 0
 	}
 
+	// End result of the search
 	var nodes []JSONNode
 	var recipes []JSONRecipe
-
-	//processedNodes := make(map[int]bool)
-	nodesToInclude := make(map[int]bool)
-
-	type QueueItem struct {
-		Node          *search.ElementNode
-		AncestryChain *AncestryChain
-		Depth         int
-	}
 
 	// Start with target node and empty ancestry
 	queue := []QueueItem{
@@ -137,96 +140,80 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) (*GraphJSONWithRecip
 	}
 
 	// Add target to results
+	nodesToInclude := make(map[int]bool)
 	nodesToInclude[target.ID] = true
 	nodes = append(nodes, JSONNode{
 		ID:   target.ID,
 		Name: target.Name,
 	})
-
-	nodeStep := make(map[int]int)
-	nodeStep[target.ID] = 0
+	// Recipe map to prevent duplicate JSONRecipe
+	addedRecipe := make(map[string]bool)
 
 	maxIterations := 1000
 	iteration := 0
+	visitedNodes := 0
 
+	nthreads := 4
 	for len(queue) > 0 && iteration < maxIterations {
-		iteration++
-		visitedNodes++
-		current := queue[0]
-		queue = queue[1:]
+		nextFrontier := make([]QueueItem, 0)
+		taskChannel := make(chan QueueItem)
+		nextFrontierChannel := make(chan QueueItem)
 
-		if isBaseElement(current.Node) {
-			//baseElementsFound[current.Node.Name] = true
-			continue
+		var wg sync.WaitGroup
+		wg.Add(nthreads)
+		progresses := make([]BFSProgressResult, nthreads)
+		for i := range nthreads {
+			progresses[i] = BFSProgressResult{
+				recipes:      make([]JSONRecipe, 0),
+				nodes:        make([]JSONNode, 0),
+				visitedNodes: 0,
+				iteration:    0,
+			}
+			go ProcessQueue(taskChannel, nextFrontierChannel, &progresses[i], &wg)
 		}
 
-		if isNoRecipe(current.Node) {
-			continue
+		// Receive results from routines
+		go func() {
+			for {
+				item, ok := <-nextFrontierChannel
+				if !ok {
+					return
+				}
+				nextFrontier = append(nextFrontier, item)
+			}
+		}()
+		// Send tasks to routines
+		for _, task := range queue {
+			taskChannel <- task
+		}
+		close(taskChannel)
+
+		// All routine done processing this level
+		wg.Wait()
+		close(nextFrontierChannel)
+		// Merge the results of each routines
+		for _, progress := range progresses {
+			visitedNodes += progress.visitedNodes
+			iteration += progress.iteration
+
+			// Merge recipes uniquely
+			for _, recipe := range progress.recipes {
+				recipeSignature := fmt.Sprintf("%s=%s+%s@%d", recipe.Result, recipe.Ingredients[0], recipe.Ingredients[1], recipe.Step)
+				if _, exists := addedRecipe[recipeSignature]; !exists {
+					addedRecipe[recipeSignature] = true
+					recipes = append(recipes, recipe)
+				}
+			}
+			// Merge all used nodes in recipes
+			for _, node := range progress.nodes {
+				if !nodesToInclude[node.ID] {
+					nodesToInclude[node.ID] = true
+					nodes = append(nodes, node)
+				}
+			}
 		}
 
-		recipeFound := false
-		for _, recipe := range current.Node.Recipes {
-			if len(recipe) != 2 || recipe[0] == nil || recipe[1] == nil {
-				continue
-			}
-
-			if (isNoRecipe(recipe[0]) && !isBaseElement(recipe[0])) || (isNoRecipe(recipe[1]) && !isBaseElement(recipe[1])) {
-				continue
-			}
-
-			if recipe[0].Tier >= current.Node.Tier || recipe[1].Tier >= current.Node.Tier {
-				continue
-			}
-
-			if isElemCombUsed(current.Node.Name, recipe[0].ID, recipe[1].ID, current.AncestryChain) {
-				continue
-			}
-
-			markElemCombUsed(current.Node.Name, recipe[0].ID, recipe[1].ID, current.AncestryChain)
-
-			recipeFound = true
-			recipes = append(recipes, JSONRecipe{
-				Ingredients: []string{recipe[0].Name, recipe[1].Name},
-				Result:      current.Node.Name,
-				Step:        current.Depth,
-			})
-
-			for _, ingredient := range recipe {
-				if ingredient == nil {
-					continue
-				}
-
-				if !nodesToInclude[ingredient.ID] {
-					nodesToInclude[ingredient.ID] = true
-					nodes = append(nodes, JSONNode{
-						ID:   ingredient.ID,
-						Name: ingredient.Name,
-					})
-				}
-
-				newAncestry := &AncestryChain{
-					Element: ingredient.Name,
-					Parents: current.AncestryChain,
-				}
-
-				nodeStep[ingredient.ID] = current.Depth + 1
-
-				if !isBaseElement(ingredient) {
-					queue = append(queue, QueueItem{
-						Node:          ingredient,
-						AncestryChain: newAncestry,
-						Depth:         current.Depth + 1,
-					})
-				} else {
-					visitedNodes++
-				}
-			}
-			break
-		}
-
-		if !recipeFound && !visited[current.Node.ID] {
-			queue = append(queue, current)
-		}
+		queue = nextFrontier
 	}
 
 	if iteration >= maxIterations {
@@ -240,112 +227,86 @@ func ReverseBFS(target *search.ElementNode, pathNumber int) (*GraphJSONWithRecip
 }
 
 func ResetCaches() {
-	visited = make(map[int]bool)
 	usedElemComb = make(map[string]map[string]bool)
 }
 
-// func main() {
-// 	err := scraping.ScrapeRecipes(false)
-// 	if err != nil {
-// 		log.Fatal("Error while scraping recipes:", err)
-// 	}
+func ProcessQueue(task chan QueueItem, next chan QueueItem, result *BFSProgressResult, wg *sync.WaitGroup) {
+	defer func() {
+		wg.Done()
+		// fmt.Println("Routine finished")
+	}()
 
-// 	recipes, err := scraping.GetScrapedRecipesJSON()
-// 	if err != nil {
-// 		log.Fatal("Error loading recipes from JSON:", err)
-// 	}
+	for {
+		item, ok := <-task
+		if !ok {
+			break
+		}
 
-// 	var graph search.RecipeGraph
-// 	err = search.ConstructRecipeGraph(recipes, &graph)
-// 	if err != nil {
-// 		log.Fatal("Error constructing recipe graph:", err)
-// 	}
+		// fmt.Println("Processing item:", item.Node.Name, "Depth:", item.Depth)
 
-// 	reader := bufio.NewReader(os.Stdin)
+		result.iteration++
+		result.visitedNodes++
 
-// 	fmt.Print("Enter target element name: ")
-// 	targetName, _ := reader.ReadString('\n')
-// 	targetName = strings.TrimSpace(targetName)
+		if isBaseElement(item.Node) {
+			continue
+		}
+		if isNoRecipe(item.Node) {
+			continue
+		}
 
-// 	target, err := search.GetElementByName(&graph, targetName)
-// 	if err != nil {
-// 		log.Fatalf("Error: element '%s' not found.\n", targetName)
-// 	}
+		for _, recipe := range item.Node.Recipes {
+			if len(recipe) != 2 || recipe[0] == nil || recipe[1] == nil {
+				continue
+			}
 
-// 	fmt.Print("Enter number of paths to find: ")
-// 	inputMax, _ := reader.ReadString('\n')
-// 	inputMax = strings.TrimSpace(inputMax)
-// 	maxPaths, err := strconv.Atoi(inputMax)
-// 	if err != nil || maxPaths <= 0 {
-// 		log.Fatalf("Invalid number: %v\n", inputMax)
-// 	}
+			if (isNoRecipe(recipe[0]) && !isBaseElement(recipe[0])) || (isNoRecipe(recipe[1]) && !isBaseElement(recipe[1])) {
+				continue
+			}
+			if recipe[0].Tier >= item.Node.Tier || recipe[1].Tier >= item.Node.Tier {
+				continue
+			}
 
-// 	usedElemComb = make(map[string]map[string]bool)
-// 	pathsFound := 0
-// 	consecutiveFailures := 0
-// 	maxConsecutiveFailures := 3 // Number of empty path results before giving up
+			usedElemCombMutex.Lock()
+			if isElemCombUsed(item.Node.Name, recipe[0].ID, recipe[1].ID, item.AncestryChain) {
+				usedElemCombMutex.Unlock()
+				continue
+			}
+			markElemCombUsed(item.Node.Name, recipe[0].ID, recipe[1].ID, item.AncestryChain)
+			usedElemCombMutex.Unlock()
 
-// 	for i := 0; i < maxPaths; i++ {
-// 		fmt.Printf("Finding path %d...\n", i+1)
-// 		startTime := time.Now()
+			result.recipes = append(result.recipes, JSONRecipe{
+				Ingredients: []string{recipe[0].Name, recipe[1].Name},
+				Result:      item.Node.Name,
+				Step:        item.Depth,
+			})
 
-// 		visited = make(map[int]bool)
-// 		result, tmp := ReverseBFS(target, i+1)
+			for _, ingredient := range recipe {
+				if ingredient == nil {
+					continue
+				}
 
-// 		// If no recipes found in this path
-// 		if len(result.Recipes) == 0 {
-// 			consecutiveFailures++
-// 			fmt.Printf("No recipes found for path %d (attempt %d of %d).\n",
-// 				i+1, consecutiveFailures, maxConsecutiveFailures)
+				result.nodes = append(result.nodes, JSONNode{
+					ID:   ingredient.ID,
+					Name: ingredient.Name,
+				})
 
-// 			// If we've had multiple failures in a row, assume no more paths exist
-// 			if consecutiveFailures >= maxConsecutiveFailures {
-// 				fmt.Printf("No more paths found after %d consecutive empty results.\n", consecutiveFailures)
-// 				break
-// 			}
+				newAncestry := &AncestryChain{
+					Element: ingredient.Name,
+					Parents: item.AncestryChain,
+				}
 
-// 			// Skip saving this empty result and try again
-// 			continue
-// 		}
+				if !isBaseElement(ingredient) {
+					next <- QueueItem{
+						Node:          ingredient,
+						AncestryChain: newAncestry,
+						Depth:         item.Depth + 1,
+					}
+				} else {
+					result.visitedNodes++
+				}
 
-// 		// Reset the failure counter since we found a valid path
-// 		consecutiveFailures = 0
-// 		pathsFound++
+			}
 
-// 		filename := fmt.Sprintf("graph_output_%d.json", pathsFound)
-// 		jsonBytes, err := json.MarshalIndent(result, "", "  ")
-// 		if err != nil {
-// 			log.Fatalf("Failed to marshal JSON: %v", err)
-// 		}
-// 		err = os.WriteFile(filename, jsonBytes, 0644)
-// 		if err != nil {
-// 			log.Fatalf("Failed to write file: %v", err)
-// 		}
-
-// 		elapsedTime := time.Since(startTime)
-// 		fmt.Printf("Saved path %d to '%s' (took %.2f seconds)\n",
-// 			pathsFound, filename, elapsedTime.Seconds())
-
-// 		fmt.Printf("Path %d has %d nodes and %d recipes\n",
-// 			pathsFound, len(result.Nodes), len(result.Recipes))
-
-// 		// if len(result.Recipes) > 0 {
-// 		// 	fmt.Println("Cek ancestry signatures:")
-// 		// 	count := 0
-// 		// 	for key := range usedElemComb {
-// 		// 		if count >= 3 {
-// 		// 			break
-// 		// 		}
-// 		// 		fmt.Printf("  %s\n", key)
-// 		// 		count++
-// 		// 	}
-// 		// }
-// 	}
-
-// 	if pathsFound < maxPaths {
-// 		fmt.Printf("\nFound %d paths out of %d requested. No more unique paths available.\n",
-// 			pathsFound, maxPaths)
-// 	} else {
-// 		fmt.Printf("\nSuccessfully found all %d requested paths.\n", maxPaths)
-// 	}
-// }
+		}
+	}
+}

@@ -24,6 +24,12 @@ const SingleRecipePage = () => {
     if (!searchQuery.trim()) {
       return;
     }
+
+    if (searchQuery === 'Fire' || searchQuery === 'Water' || searchQuery === 'Earth' || searchQuery === 'Air') {
+      setErrorMessage(searchQuery + ' is a base element.');
+      setSearchQuery('');
+      return;
+    }
     setErrorMessage('');
     console.log(`Searching for: ${searchQuery} using ${selectedAlgo === 1 ? 'BFS' : 'DFS'}`);
     const algo = selectedAlgo === 1 ? 'BFS' : 'DFS';
@@ -55,7 +61,7 @@ const SingleRecipePage = () => {
 return (
   <div className="max-h-screen flex flex-col bg-[var(--background)]">
     <Navbar variant="single" currentRecipeMode={mode} setRecipeMode={setMode} />
-    <div className="p-8 overflow-y-hidden">
+    <div className="p-8">
       {/* Title */}
       <div className="mt-4 text-center items-center">
         <h1 className={`text-6xl font-bold text-white ${josefinSans.className}`}>
@@ -63,7 +69,7 @@ return (
         </h1>
       </div>
       <div className="mt-10 flex flex-col items-center mb-10">
-        <div className="flex justify-center h-10 space-x-3">
+        <div className="flex justify-center h-10 space-x-3 mb-1">
           <div className="flex items-center">
             <select 
               value={selectedAlgo}
@@ -94,11 +100,13 @@ return (
             Search
           </button>
         </div>
-        {errorMessage && (
-          <div className="p-1 bg-opacity-20 rounded-md text-center max-w-md">
-            <p className="text-[#B3B3B3]">{errorMessage}</p>
-          </div>
-        )}
+        <div className='h-2 mb-1'>
+          {errorMessage && (
+            <div className="bg-opacity-20 rounded-md text-sm text-center max-w-md">
+              <p className="text-gray-100/20">{errorMessage}</p>
+            </div>
+          )}
+        </div>
       </div>
       <ScrollingElements />
     </div>

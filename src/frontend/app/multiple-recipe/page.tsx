@@ -25,10 +25,17 @@ const handleSearch = async () => {
   if (!searchQuery.trim()) {
     return;
   }
+
+  if (searchQuery === 'Fire' || searchQuery === 'Water' || searchQuery === 'Earth' || searchQuery === 'Air') {
+    setErrorMessage(searchQuery + ' is a base element.');
+    setSearchQuery('');
+    return;
+  }
   setErrorMessage('');
   const algo = selectedAlgo === 1 ? "bfs" : "dfs";
   console.log(`Searching for: ${searchQuery} using ${selectedAlgo === 1 ? 'BFS' : 'DFS'}`);
   
+
   try {
       const response = await fetch(`${config.API_URL}/api/recipes?element=${encodeURIComponent(searchQuery.trim())}&algo=${algo}&max=${selectedNumR}`);
       const data = await response.json();
@@ -54,15 +61,20 @@ const handleSearch = async () => {
 
 const handleInputQuery = (e) => {
   setSearchQuery(e.target.value);
+  if(selectedNumR <=0 || isNaN(selectedNumR)) {
+    return;
+  }
   setErrorMessage('');
 };
 
 const handleInputNumR = (e) => {
   const value = Number(e.target.value);
-  if (value > 0) {
-    setSelectedNumR(value);
-    setErrorMessage('');
+  setSelectedNumR(value);
+  if (isNaN(value) || value <= 0) {
+    setErrorMessage("Invalid number of recipes");
+    return;
   }
+  setErrorMessage('');
 };
 
 return (
@@ -83,13 +95,13 @@ return (
           <input
               type="text"
               value={selectedNumR}
-              onChange={(e) => handleInputNumR(e)}
+              onChange={handleInputNumR}
               className="ml-3 w-10 h-4.5 bg-[#40534C] rounded text-white text-center"
           />
         </div>
       </div>
       <div className="flex flex-col items-center">
-        <div className="flex justify-center h-10 space-x-3 mb-3">
+        <div className="flex justify-center h-10 space-x-3 mb-1">
           <div className="flex items-center">
             <select 
               value={selectedAlgo}
@@ -110,9 +122,9 @@ return (
           </div>
           <button 
             onClick={handleSearch}
-            disabled={!searchQuery.trim()}
+            disabled={!searchQuery.trim() || isNaN(selectedNumR) || selectedNumR <= 0}
             className={`rounded-lg w-20 text-center items-center ${
-              !searchQuery.trim()
+              !searchQuery.trim() || isNaN(selectedNumR) || selectedNumR <= 0 
                 ? 'bg-[#d6bd9877] text-[#1E1E1E] cursor-not-allowed'
                 : 'bg-[#D6BD98] text-[#1E1E1E] hover:bg-[#E3B879]'
             }`}
@@ -120,11 +132,13 @@ return (
             Search
           </button>
         </div>
-        {errorMessage && (
-          <div className="p-1 bg-opacity-20 rounded-md text-center max-w-md">
-            <p className="text-[#B3B3B3]">{errorMessage}</p>
-          </div>
-        )}
+        <div className='h-2 mb-1'>
+          {errorMessage && (
+            <div className="bg-opacity-20 rounded-md text-sm text-center max-w-md">
+              <p className="text-gray-100/20">{errorMessage}</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
     <ScrollingElements />
