@@ -24,7 +24,6 @@ interface DFSRecipeResultProps {
 
 const DFSRecipeResult: React.FC<{ graph: DFSGraphData }> = ({ graph }) => {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [uniqueElements, setUniqueElements] = useState<string[]>([]);
   const [scale, setScale] = useState(1);
   const [recipes, setRecipes] = useState<{ingredients: string[], result: string, step: number}[]>([]);
 
@@ -113,8 +112,7 @@ const DFSRecipeResult: React.FC<{ graph: DFSGraphData }> = ({ graph }) => {
     const convertedRecipes = convertDFSToRecipes(graph.nodes);
     setRecipes(convertedRecipes);
     
-    const elements = getUniqueElements(graph.nodes);
-    setUniqueElements(elements);
+    const unique = getUniqueElements(graph.nodes);
     
     const targetId = findTargetId(graph.nodes);
 
@@ -222,7 +220,7 @@ const DFSRecipeResult: React.FC<{ graph: DFSGraphData }> = ({ graph }) => {
     const iconMargin = 10;
     const rowHeight = 80;
     
-    const uniqueItems = Array.from(new Set(uniqueElements));
+    const uniqueItems = Array.from(new Set(unique));
     
     uniqueItems.forEach((item, i) => {
       const row = Math.floor(i / iconsPerRow);

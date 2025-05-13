@@ -18,7 +18,6 @@ export type DFSGraphData = {
 
 const DFSRecipeResultMR: React.FC<{ graph: DFSGraphData }> = ({ graph }) => {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [uniqueElements, setUniqueElements] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<{ingredients: string[], result: string, step: number}[]>([]);
   const [debugInfo, setDebugInfo] = useState<string>("");
 
@@ -179,8 +178,7 @@ const DFSRecipeResultMR: React.FC<{ graph: DFSGraphData }> = ({ graph }) => {
       const convertedRecipes = convertDFSToRecipes(graph.nodes);
       setRecipes(convertedRecipes);
       
-      const elements = getUniqueElements(graph.nodes);
-      setUniqueElements(elements);
+      const unique = getUniqueElements(graph.nodes);
 
       const targetId = findTargetId(graph.nodes);
       const rootData = buildTree(targetId, graph.nodes);
@@ -286,8 +284,8 @@ const DFSRecipeResultMR: React.FC<{ graph: DFSGraphData }> = ({ graph }) => {
       const iconSize = 30;
       const rowHeight = 60;
 
-      if (elements.length > 0) {
-        elements.forEach((item, i) => {
+      if (unique.length > 0) {
+        unique.forEach((item, i) => {
           if (!item) return; 
           
           const row = Math.floor(i / iconsPerRow);
