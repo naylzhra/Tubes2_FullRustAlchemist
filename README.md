@@ -11,25 +11,72 @@ Pada algoritma BFS, semua elemen yang dapat membentuk suatu elemen akan ditelusu
 Pada algoritma DFS, satu resep dari elemen akan ditelusuri hingga mencapai elemen dasar. Penelusuran suatu simpul elemen akan berlanjut ke resep selanjutnya jika semua jalur valid telah ditemukan untuk resep sebelumnya. Karena resep terdiri dari dua elemen, setiap resep harus menemukan semua path valid ke kedua elemen dalam resep tertentu. Ini adalah salah satu aspek yang dapat diparalelisasi. 
 
 ## Requirement
-1. go 1.24
-2. npm
+<div>
+    <table align="center">
+      <tr>
+        <td>No</td>
+        <td>Requirement</td>
+      </tr>
+      <tr>
+        <td>1</td>
+        <td>Go 1.24</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>Node.js (18.x atau lebih baru)</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>npm</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>Docker Desktop	</td>
+      </tr>
+    </table>
+</div>
 
 ## Cara Mengkompilasi dan Menjalankan Program
+##### Tanpa Docker
+1. Clone repository
+   ```
+      git clone https://github.com/naylzhra/Tubes2_FullRustAlchemist.git
+   ```
+2. Instalasi dependencies
+    ```
+       cd src/frontend
+       npm install
+       cd ../backend
+       go mod download
+   ```
+3. Built frontend, pastikan sebelumnya sudah instalasi dependensinya.
+   ```
+      cd src/frontend
+      npm run dev
+   ```
+4. Run backend pada terminal berbeda, pastikan sebelumnya sudah instalasi dependensinya.
+   ```
+      cd src/backend
+      go run .
+   ```
+5. Kemudian, buka localhost:3000 pada browser
+   ```
+      http://localhost:3000/
+   ```
+6. Pilih mode pencarian resep yang diinginkan (single recipe/ multiple recipe)
+7. Masukkan input sesuai kebutuhan pencarian kemudian klik tombol search
+
+##### Menggunakan Docker
 1. Clone repository
    ```
     git clone https://github.com/naylzhra/Tubes2_FullRustAlchemist.git
    ```
-3. Built frontend, pastikan sebelumnya sudah instalasi dependensinya.
+2. Buka dan jalankan aplikasi docker desktop
+3. Build dan jalankan docker
    ```
-   cd src/frontend
-   npm run dev
+     docker compose up --build
    ```
-4. Run backend pada terminal berbeda, pastikan sebelumnya sudah instalasi dependensinya.
-   ```
-    cd src/backend
-    go run .
-   ```
-5. Kemudian, buka localhost:3000 pada browser
+5. Kemudian, buka localhost:3000 pada browse
    ```
      http://localhost:3000/
    ```
