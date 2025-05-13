@@ -64,17 +64,28 @@ const RecipeResult: React.FC<RecipeResultProps> = ({ graph }) => {
     );
   };
 
+  const orderedRecipes = React.useMemo(
+  () => [...(graph.recipes ?? [])].sort((a, b) => a.step - b.step),
+  [graph.recipes]
+  );
+
   useEffect(() => {
     if (!graph.recipes || graph.recipes.length === 0) return;
     
     const elements = getUniqueElements(graph.recipes);
     setUniqueElements(elements);
-    
-    const rootData = buildTree(graph.recipes[0]?.result ?? "", graph.recipes);
-    
+    const rootResult =
+      graph.recipes.find(r => r.step === 0)?.result ??
+      graph.recipes.reduce(
+        (best, cur) => (cur.step < best.step ? cur : best),
+        graph.recipes[0]
+      ).result;
+
+    const rootData = buildTree(rootResult, graph.recipes as GraphRecipe[]);    
+
     const maxDepth = calculateMaxDepth(rootData);
     const leafCount = countLeafNodes(rootData);
-    
+
     const baseWidth = Math.max(1800, leafCount * 100);
     const baseHeight = Math.max(1400, maxDepth * 200);
     
@@ -221,16 +232,15 @@ const RecipeResult: React.FC<RecipeResultProps> = ({ graph }) => {
     <div className="flex flex-col gap-4">
       <div className="border rounded p-4 w-full">
         <h3 className="font-semibold mb-2 text-white">Recipe steps</h3>
-        <ul className="text-sm list-disc pl-5 space-y-1">
-          {graph.recipes && graph.recipes.length > 0 && graph.recipes.map((r, i) => (
-          <li key={i}>
-            <span className="text-[#D6BD98]">{r.ingredients.join(" + ")}</span>{" "}
-            ➜ <span className="font-medium text-white">{r.result}</span>
-          </li>
-        ))}
+          <ul className="text-sm list-disc pl-5 space-y-1">
+            {graph.recipes && graph.recipes.length > 0 && graph.recipes.map((r, i) => (
+            <li key={i}>
+              <span className="text-[#D6BD98]">{r.ingredients.join(" + ")}</span>{" "}
+              ➜ <span className="font-medium text-white">{r.result}</span>
+            </li>
+            ))}
         </ul>
       </div>
-
       <div className="border rounded p-4 relative">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-semibold text-white">Recipe Tree</h3>

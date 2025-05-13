@@ -71,27 +71,30 @@ const Result = () => {
           throw new Error(errorResponse.message || `Error: ${errorResponse.type}`);
         }
         const successResponse = json as SuccessResponse;
-        const graphData = successResponse.data;
+        let graphData = successResponse.data;
         const elapsedTime = (performance.now() - t0).toFixed(2);
         
-        // Add elapsed time to graph data
         graphData.elapsed = graphData.elapsed || elapsedTime;
         
-        // Set elapsed time in state
         setElapsed(graphData.elapsed);
         
         // Set visited nodes based on algorithm
-        if (algo === "bfs") {
+        if (algo === "bfs" && "paths" in graphData) {
+          const firstPath = (graphData as any).paths?.[0] ?? { nodes: [], recipes: [] };
+          graphData = {
+            nodes:        firstPath.nodes,
+            recipes:      firstPath.recipes,
+            elapsed:      graphData.elapsed,
+            visitedNodes: graphData.visitedNodes,
+          } as BFSGraphData;
+        }
+        if (algo === "bfs"){
           const bfsData = graphData as BFSGraphData;
-          if(!bfsData.recipes || bfsData.recipes.length === 0) {
-            setHasNoRecipe(true);
-          }
+          setHasNoRecipe(!bfsData.recipes || bfsData.recipes.length === 0);
           setVisitedNodes(bfsData.visitedNodes);
         } else {
           const dfsData = graphData as DFSGraphData;
-          if(Object.keys(dfsData.nodes).length === 0) {
-            setHasNoRecipe(true);
-          }
+          setHasNoRecipe(Object.keys(dfsData.nodes).length === 0);
           setVisitedNodes(dfsData.visitedNodes);
         }
         

@@ -206,6 +206,9 @@ const MultiResult = () => {
     <div className="max-h-screen flex flex-col bg-[var(--background)]">
       <Navbar variant="multiple" currentRecipeMode={mode} setRecipeMode={setMode} />
       <div className="flex flex-col items-center p-[2%]">
+        <p className="text-white mt-3 text-center mb-2">
+          Found {paths.length} recipes for {element}
+        </p>
         <p className="w-[510px] h-[58px] m-[5px] p-4 border
                     border-[var(--foreground)] bg-[var(--foreground)]
                     rounded-[12px] text-white text-center">
